@@ -79,6 +79,18 @@ Dropbox engineers maintain upstream, but it is not a formally supported Dropbox 
 - Use a separate clean branch or worktree from `upstream/master` for each authorized upstream implementation.
 - Initialization used `upstream/master@8fc3850baecaaa751e85b1673f619d29b68f3b76`; refresh upstream before contributions.
 
+## Maintainer Role & Search Development Goal
+
+- The user is not an upstream `dropbox/dbxcli` developer or maintainer; they are an external contributor working through this fork.
+- The user wants to keep developing `dbxcli` and help implement a better `search` for both agents and humans.
+- Primary consumers are LLM agents that integrate the CLI and iterate faster and more precisely than humans; human usability remains required.
+- Design search output and options for agents first: explicit limits and truncation, stable machine-readable fields, precise server-side filters, and no silently lost results.
+- Prefer improvements that use the existing `files/search_v2` and `files/search/continue_v2` endpoints and the pinned SDK before proposing new endpoints.
+- Android-internal endpoints and fields are research evidence only; never assume a public CLI token or app key can use them.
+- Related evidence lives in the reverse-engineering project: `~/projects/REVERSE/project-reverse-android-dropbox/context/findings-search-comparison.md`.
+- Search work follows the existing contribution contract: findings, `Authorized-Work`, upstream-first branches, and approval-gated publication.
+- Never treat this goal as authorization to implement a finding or publish to upstream.
+
 ## Finding and Contribution Ledger
 
 - At the start of every agent session, agents MUST read root `ISSUES.md` before repository work.

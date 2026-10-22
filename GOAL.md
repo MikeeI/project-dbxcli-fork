@@ -2,18 +2,18 @@
 
 ## Purpose
 
-The maintainer of this fork is an external contributor, not an upstream `dropbox/dbxcli` developer.
+The user maintains this private fork, not upstream `dropbox/dbxcli`.
 The goal is a better `dbxcli search` for LLM agents first and humans second.
 Agents integrate the CLI and iterate faster and more precisely than humans, so they must not misread incomplete results.
 
 This file records goals and priorities only.
 It does not authorize implementation or upstream publication.
-Each goal still needs a finding in `ISSUES.md` and an explicit `Authorized-Work` selection.
+Each goal still needs a finding in `ISSUES.md` and an explicit instruction to implement its recorded scope.
 
-## Contribution Intent
+## Private Fork Intent
 
 These goals are for this fork only.
-Upstream `dropbox/dbxcli` is an official Dropbox project, and upstream interest in these changes is unlikely.
+Upstream integration is not a delivery goal, regardless of whether upstream would accept these changes.
 Goals are implemented on the fork's `personal` branch and are not prepared as upstream pull requests.
 Upstream publication happens only if the user later decides so and approves the exact draft and target.
 Staying close to upstream code and conventions remains useful so that merging future upstream releases stays cheap.

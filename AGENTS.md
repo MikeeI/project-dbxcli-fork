@@ -50,86 +50,89 @@ New quality commands and future language setup must follow this policy instead o
 It supports interactive use, scripts, CI, and agent workflows through text output and versioned JSON contracts.
 Dropbox engineers maintain upstream, but it is not a formally supported Dropbox product.
 
-## Fork & Upstream Contribution Intent
+## Private Fork Purpose and Branches
 
-- Official upstream: [dropbox/dbxcli](https://github.com/dropbox/dbxcli).
-- This checkout is the [MikeeI/project-dbxcli-fork](https://github.com/MikeeI/project-dbxcli-fork) fork, not an independently owned product.
-- The goal is to support upstream with evidence-backed issues, comments, and pull requests.
-- `ISSUES.md` provides the compact finding overview and global ID allocator.
-- `issues/ISSUE-NNN.md` owns the complete durable record for one root cause.
-- `FORMAT.md` owns research, drafting, implementation authorization, approval, and publication rules.
-- Prefer small, well-scoped corrections with outsized maintainer or user value.
-- Recommend a pull request when a bounded verified fix is ready and no active implementation owns it.
-- Otherwise recommend a comment, a new issue, or continued investigation according to the evidence.
-- Apply `skill-fork-contribution-tracking` for ledger, lifecycle, personal-branch, and upstream handoff work.
-- Apply `skill-maintainer-communication` before external issues, pull requests, reviews, comments, or discussions.
-- Search existing work first and follow current upstream templates and disclosure rules.
-- Apply `skill-semantic-compression-3` when authoring or restructuring tracking content.
-- Apply `skill-git-commit-format` while respecting explicit upstream contribution conventions.
-- Never choose `Authorized-Work` or `Publication-Target` on the user's behalf.
-- `Research-and-Reporting` permits research, issues, and comments but no source implementation.
-- `Pull-Request-Implementation` authorizes only the scoped implementation recorded for that finding.
-- Base upstream contribution branches on current `upstream/master`.
-- Keep fork-only context, ledgers, configuration, and personal commits out of upstream contribution diffs.
-- Reproduce claimed bugs against current upstream and run the narrowest conclusive verification.
-- Publish one coherent root cause per issue, comment, or pull request.
-- `origin` is `git@github.com:MikeeI/project-dbxcli-fork.git`; `upstream` is `git@github.com:dropbox/dbxcli.git`.
-- `personal` owns fork-only guidance and tracking, tracks `origin/personal`, and is the fork's default branch.
-- `master` remains the upstream source line; never merge personal tracking commits into contribution branches.
-- Use a separate clean branch or worktree from `upstream/master` for each authorized upstream implementation.
-- Initialization used `upstream/master@8fc3850baecaaa751e85b1673f619d29b68f3b76`; refresh upstream before contributions.
+- Upstream source: [dropbox/dbxcli](https://github.com/dropbox/dbxcli).
+- This checkout is the user's [personal fork](https://github.com/MikeeI/project-dbxcli-fork).
+- Develop for the user's own workflows, with agents first and human usability preserved.
+- Upstream integration is not a delivery goal or a prerequisite for private development.
+- Do not assume upstream interest or rejection without evidence.
+- `origin` is `git@github.com:MikeeI/project-dbxcli-fork.git`.
+- `upstream` is `git@github.com:dropbox/dbxcli.git`.
+- `personal` owns private source development, guidance, and tracking; it tracks `origin/personal`.
+- `personal` remains the fork's default branch and the normal commit and push target.
+- `master` remains the upstream source line; do not merge private development into it.
+- Implement scoped user requests directly on `personal`; upstream-first branches and PR drafts are not required.
+- Verify fixes against the current fork revision, not only the inherited upstream baseline.
+- Keep changes focused and preserve existing tooling to limit future upstream merge costs.
+- Initialization used `upstream/master@8fc3850baecaaa751e85b1673f619d29b68f3b76`.
+- Fetching or merging newer upstream work is a separate operation, not a prerequisite for every private change.
+- Plans, goals, and findings do not authorize source implementation; require a direct scoped user instruction.
+- Fork-only development does not waive existing JSON, CLI, authentication, or data-integrity contracts.
 
 ## Maintainer Role & Search Development Goal
 
-- The user is not an upstream `dropbox/dbxcli` developer or maintainer; they are an external contributor working through this fork.
-- The user wants to keep developing `dbxcli` and help implement a better `search` for both agents and humans.
-- Primary consumers are LLM agents that integrate the CLI and iterate faster and more precisely than humans; human usability remains required.
-- Design search output and options for agents first: explicit limits and truncation, stable machine-readable fields, precise server-side filters, and no silently lost results.
-- Prefer improvements that use the existing `files/search_v2` and `files/search/continue_v2` endpoints and the pinned SDK before proposing new endpoints.
+- The user maintains this private fork, not upstream `dropbox/dbxcli`.
+- Develop a better `search` for the user's agents and human workflows.
+- LLM agents are the primary consumers; human usability remains required.
+- Make limits and truncation explicit, preserve machine-readable fields, and never silently discard collected results.
+- Prefer precise server-side filters and the existing search endpoints with the pinned SDK.
 - A reverse-engineering project for the Dropbox Android app exists: `~/projects/REVERSE/project-reverse-android-dropbox`.
 - Its comparison of dbxcli, the public API, and Android search is `context/findings-search-comparison.md` in that project.
 - It is static analysis plus public API documentation; no live Dropbox requests were made.
 - Android-internal endpoints and fields (for example DCS, Ask, date filters, snippets) are research evidence only.
 - Never assume a public CLI token or app key can use them, and never copy Android behavior into `GOAL.md` as a promise.
 - Concrete prioritized search goals live in `GOAL.md`.
-- Search work follows the existing contribution contract: findings, `Authorized-Work`, upstream-first branches, and approval-gated publication.
-- Never treat this goal as authorization to implement a finding or publish to upstream.
+- Search implementation follows the private-fork workflow and the scope recorded in `GOAL.md`.
+- A goal is not authorization to implement source changes, alter compatibility guarantees, or publish upstream.
 
-## Finding and Contribution Ledger
+## Finding and Research Ledger
 
-- At the start of every agent session, agents MUST read root `ISSUES.md` before repository work.
+- Read root `ISSUES.md` at the start of every session before repository work.
 - `ISSUES.md` owns the global `Next finding ID` allocator and compact cross-finding overview.
 - Each `issues/ISSUE-NNN.md` owns one finding's state, evidence, drafts, and next action.
-- `FORMAT.md` is authoritative for research, drafting, implementation boundaries, and publication format.
-- Before adding a finding, search the index and every relevant issue record for the same symptom or root cause.
-- New findings MUST use `Next finding ID`.
-- Create the issue file, add its index row, and increment the allocator together.
-- Finding IDs use `ISSUE-NNN`, start at `ISSUE-001`, and remain permanent.
-- Never reuse, renumber, or scope IDs by subsystem, status, session, or contribution type.
-- Update the issue file and `ISSUES.md` together after state, authorization, target, priority, next action, or reference changes.
-- Every issue record MUST use the field and section contract in `FORMAT.md`.
+- `FORMAT.md` owns the existing record schema, evidence vocabulary, and optional upstream contribution lifecycle.
+- Its upstream implementation and publication gates apply only to explicitly requested upstream work.
+- Private implementation requires a scoped user instruction, not `Pull-Request-Implementation` or an upstream target.
+- Preserve existing records and field meanings; do not migrate the ledger without a separate user request.
+- Search the index and relevant issue records for the same symptom or root cause before adding a finding.
+- Allocate new findings from `Next finding ID`; create the file, index row, and allocator increment together.
+- IDs use permanent `ISSUE-NNN` values starting at `ISSUE-001`; never reuse, renumber, or partition their sequence.
+- Update the issue file and index together after state, authorization, target, priority, next-action, or reference changes.
+- Every issue record must follow the field and section contract in `FORMAT.md`.
 - New findings start with `State: Investigating`, `Authorized-Work: Not-Selected`, and `Publication-Target: Not-Selected`.
 - New findings use `External-Reference: Not published.` until an external reference exists.
-- Keep findings Investigating until currentness, prior art, impact, and correction value are evidence-backed.
+- Private fixes do not imply `PR-Ready` or `Submitted`; record local scope, commits, and checks without inventing states.
+- Publication candidates remain Investigating until currentness, prior art, impact, and value are evidence-backed.
 - Clone detectors, AST matches, text similarity, shared names, and TODOs produce candidates only.
 - A duplication finding requires shared change pressure, realistic drift, and simpler consolidation.
-- The user selects `Authorized-Work` for each finding.
-- `Research-and-Reporting` MUST NOT implement the finding.
-- `Pull-Request-Implementation` MAY implement only the recorded scope after research resolves callers and failure modes.
-- Pull-request work MUST verify behavior, commit, push, and reach `PR-Ready` before publication.
-- Show the exact draft and target before publishing an issue, comment, or pull request to official upstream.
-- Publish to official upstream only after the user approves the exact current draft and target.
-- Any draft or target change requires showing the complete current draft and target again before publication.
-- Run the read-only validator bundled with `skill-fork-contribution-tracking` after every ledger mutation.
+- Apply `skill-semantic-compression-3` when authoring or restructuring tracking content.
+- Apply `skill-fork-contribution-tracking` to existing ledger mechanics and separately requested upstream work.
+- This private-fork contract takes precedence over that skill's default upstream-delivery workflow.
+- Run the skill's read-only validator after every ledger mutation.
+
+### Optional upstream contributions
+
+- Do not initiate upstream issues, comments, or pull requests unless the user explicitly requests upstream work.
+- Apply `skill-maintainer-communication` before external issues, comments, reviews, discussions, or pull requests.
+- Search existing upstream work and follow current contribution templates, disclosure rules, and CLA requirements.
+- The user selects `Authorized-Work` and `Publication-Target`; never select them on the user's behalf.
+- `Research-and-Reporting` permits research, issues, and comments but no source implementation.
+- `Pull-Request-Implementation` permits only the implementation scope recorded for that finding.
+- Verify upstream source claims and reproduce claimed bugs against current `upstream/master`.
+- Use a separate clean branch or worktree from current `upstream/master` for each upstream implementation.
+- Keep private guidance, tracking, configuration, and unrelated fork commits out of upstream contribution diffs.
+- Publish one coherent root cause per issue, comment, or pull request.
+- Pull-request work must verify behavior, commit, push, and reach `PR-Ready` before publication.
 - Record the final external URL in `External-Reference` immediately after publication.
-- Keep `FORMAT.md`, `ISSUES.md`, `issues/`, and fork-only `AGENTS.md` changes out of upstream contribution diffs.
 
 ### External publication approval
 
-Only an external issue, comment, review, discussion, or pull request write is approval-gated.
+External issues, comments, reviews, discussions, and pull requests require approval of the exact current draft and target.
+Show the complete draft and target again after any change; earlier approval does not cover revisions.
 Before publication, read current contribution guidance and explain applicable project policy.
 The human must be able to review and own every submission statement.
-Fork commits, pushes, tracking updates, and source implementation follow the active repository contract.
+Fork commits, pushes, and authorized private implementation do not require upstream publication approval.
 
 ## Architecture & Data Flow
 
@@ -148,7 +151,7 @@ Fork commits, pushes, tracking updates, and source implementation follow the act
 - `tools/gen-docs/` and `tools/gen-json-schemas/` own their respective generators.
 - `packaging/` and `build.sh` own release archives and platform packaging.
 - `skills/dbxcli/` owns the canonical CLI skill; `plugin/claude/skills/dbxcli/` is its synchronized copy.
-- `.github/workflows/` owns upstream CI, release, and packaging automation.
+- `.github/workflows/` contains inherited CI, release, and packaging automation.
 
 ## Development Commands
 
@@ -164,7 +167,7 @@ go run ./tools/gen-docs
 go run ./tools/gen-json-schemas
 ```
 
-- Run the three upstream validation commands `go test ./...`, `go vet ./...`, and `go build ./...` before submission.
+- Run `go test ./...`, `go vet ./...`, and `go build ./...` before completing source changes.
 - Run `go test -race ./...` for concurrency-sensitive changes.
 - Regenerate command documentation and JSON schemas when command structure, help, or JSON metadata changes.
 - Run `./scripts/sync-claude-skill.sh` after canonical CLI skill changes.
@@ -177,7 +180,7 @@ go run ./tools/gen-json-schemas
 - Follow existing Cobra, Dropbox SDK, OAuth, output-envelope, and schema conventions.
 - Preserve stable JSON v1 success/error envelopes and machine-readable help discovery.
 - Treat generated documentation and schemas as outputs; edit their owners and regenerate them.
-- Keep contributions focused and follow upstream's Dropbox Contributor License Agreement requirements.
+- Keep changes focused; upstream contributions must also follow Dropbox's Contributor License Agreement requirements.
 
 ## Important Files
 
@@ -186,7 +189,7 @@ go run ./tools/gen-json-schemas
 - `docs/automation.md` owns output, error, exit-code, and authentication contracts.
 - `docs/json-schema/v1/README.md` owns JSON schema stability policy.
 - `.github/workflows/ci.yml` owns cross-platform validation and generated-output drift checks.
-- `README.md`, `CHANGELOG.md`, `SECURITY.md`, and `LICENSE` remain upstream-owned project documents.
+- `README.md`, `CHANGELOG.md`, `SECURITY.md`, and `LICENSE` are inherited upstream documents.
 
 ## Runtime/Tooling Preferences
 
@@ -202,7 +205,8 @@ go run ./tools/gen-json-schemas
 ## Testing & QA
 
 - Tests live alongside their owning Go packages; search contracts are covered in `cmd/search_test.go`.
-- Use focused existing tests while investigating; upstream validation remains the submission gate for source changes.
+- Use focused existing tests while investigating; the three validation commands above gate completed source changes.
 - Preserve CLI help, command metadata, generated references, and JSON schemas together when changing public commands.
-- Fork-only context and empty-ledger initialization require ledger validation, not unrelated source-test runs.
-- Existing upstream quality commands retain upstream output behavior; do not rewrite them for this fork setup.
+- Context-only documentation changes require review, not unrelated source-test runs.
+- Ledger mutations require the bundled ledger validator.
+- Existing upstream quality commands retain their output behavior; do not rewrite them solely for private-fork setup.

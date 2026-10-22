@@ -56,15 +56,15 @@ func sortEntries(entries []files.IsMetadata, opts listOptions) {
 	}
 
 	sort.SliceStable(entries, func(i, j int) bool {
-		less := compareLess(entries[i], entries[j], opts)
-		if opts.reverse {
-			return !less
-		}
-		return less
+		return compareLess(entries[i], entries[j], opts)
 	})
 }
 
 func compareLess(a, b files.IsMetadata, opts listOptions) bool {
+	// Swap operands rather than negate: equal keys must compare false in both directions.
+	if opts.reverse {
+		a, b = b, a
+	}
 	switch opts.sortBy {
 	case "name":
 		return strings.ToLower(entryPath(a)) < strings.ToLower(entryPath(b))

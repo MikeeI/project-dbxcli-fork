@@ -138,16 +138,16 @@ func TestSortEntriesByType(t *testing.T) {
 
 func TestSortEntriesReverse(t *testing.T) {
 	entries := []files.IsMetadata{
-		&files.FolderMetadata{Metadata: files.Metadata{PathDisplay: "/a"}},
-		&files.FolderMetadata{Metadata: files.Metadata{PathDisplay: "/b"}},
-		&files.FolderMetadata{Metadata: files.Metadata{PathDisplay: "/c"}},
+		&files.FileMetadata{Metadata: files.Metadata{PathDisplay: "/first.txt"}},
+		&files.FolderMetadata{Metadata: files.Metadata{PathDisplay: "/folder"}},
+		&files.FileMetadata{Metadata: files.Metadata{PathDisplay: "/second.txt"}},
 	}
 
-	sortEntries(entries, listOptions{sortBy: "name", reverse: true})
+	sortEntries(entries, listOptions{sortBy: "type", reverse: true})
 
 	paths := []string{entryPath(entries[0]), entryPath(entries[1]), entryPath(entries[2])}
-	if paths[0] != "/c" || paths[1] != "/b" || paths[2] != "/a" {
-		t.Errorf("sort by name reverse = %v, want [/c /b /a]", paths)
+	if paths[0] != "/first.txt" || paths[1] != "/second.txt" || paths[2] != "/folder" {
+		t.Errorf("stable reverse type sort = %v, want [/first.txt /second.txt /folder]", paths)
 	}
 }
 

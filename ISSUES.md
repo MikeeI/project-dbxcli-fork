@@ -7,12 +7,14 @@ This file owns `Next finding ID` and projects current issue-file state.
 `Next-Action` is the 2–6 word `Next-Action/Summary` projection from the issue record.
 When a row disagrees with its issue file, correct the row from the issue file in the same task.
 
-Next finding ID: ISSUE-001
+Next finding ID: ISSUE-003
 
 ## Open-Findings
 
 | ID | Finding | State | Authorized-Work | Publication-Target | Contribution-Priority | Next-Action | External-Reference |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+| [ISSUE-001](issues/ISSUE-001.md) | Uploads: vermeidbare Zwischenpuffer für vollständige Chunks | Investigating | Not-Selected | Not-Selected | Medium | Allokationsdruck ohne Produktivänderungen messen | Not published. |
+| [ISSUE-002](issues/ISSUE-002.md) | CLI-Start: unnötige Namespace-Abfrage bei account und du | Investigating | Not-Selected | Not-Selected | Low | Prior Art vollständig recherchieren | Not published. |
 
 ## Archived-Findings
 

@@ -14,7 +14,6 @@ Each goal still needs a finding in `ISSUES.md` and an explicit `Authorized-Work`
 
 - Use only `files/search_v2` and `files/search/continue_v2` plus the pinned Go SDK (`dropbox-sdk-go-unofficial/v6@v6.6.2`).
 - Do not add new endpoints.
-- Do not use Android-internal endpoints or fields.
 - Keep the JSON v1 success and error envelopes stable; add fields compatibly.
 - Regenerate command docs and JSON schemas when help or JSON metadata changes.
 - Flag names below are proposals, not final contracts.
@@ -39,7 +38,7 @@ Each goal still needs a finding in `ISSUES.md` and an explicit `Authorized-Work`
 - Keep `match_type` when converting matches to output metadata.
 - Optionally request title highlights through `match_field_options.include_highlights`.
 - The agent can then see whether a match came from the name, the content, or both.
-- These are title highlights, not content snippets like the Android app's.
+- These are title highlights only, not content snippets.
 
 ### 4. Merge duplicates across pages (small)
 
@@ -55,8 +54,8 @@ Each goal still needs a finding in `ISSUES.md` and an explicit `Authorized-Work`
 
 ## Non-Goals
 
-- Android-only server filters such as date range, `reverse_order`, and snippets; they are unverified for a public app key.
-- DCS, Ask, suggestions, and connector search.
+- Server-side date range, reverse ordering, and content snippets; the pinned public `SearchOptions` has no such fields.
+- Other search surfaces beyond `files/search_v2`, such as suggestions or connector search.
 - Regex or boolean query languages over document content; no API contract supports them.
 - Property search; it would add a new endpoint family.
 
@@ -65,10 +64,3 @@ Each goal still needs a finding in `ISSUES.md` and an explicit `Authorized-Work`
 - Official docs cap one search plus continuations at 10,000 matches.
 - Indexing may lag, and some results may not be returned.
 - The CLI cannot promise complete result lists.
-
-## Evidence
-
-- Reverse-engineering research lives in `~/projects/REVERSE/project-reverse-android-dropbox`.
-- Main comparison: `context/findings-search-comparison.md` in that project.
-- That research is static Android analysis plus public API documentation; no live Dropbox requests were made.
-- Treat Android behavior as evidence for ideas, never as a promise of backend acceptance.

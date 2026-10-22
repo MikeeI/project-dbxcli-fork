@@ -86,8 +86,11 @@ Dropbox engineers maintain upstream, but it is not a formally supported Dropbox 
 - Primary consumers are LLM agents that integrate the CLI and iterate faster and more precisely than humans; human usability remains required.
 - Design search output and options for agents first: explicit limits and truncation, stable machine-readable fields, precise server-side filters, and no silently lost results.
 - Prefer improvements that use the existing `files/search_v2` and `files/search/continue_v2` endpoints and the pinned SDK before proposing new endpoints.
-- Android-internal endpoints and fields are research evidence only; never assume a public CLI token or app key can use them.
-- Related evidence lives in the reverse-engineering project: `~/projects/REVERSE/project-reverse-android-dropbox/context/findings-search-comparison.md`.
+- A reverse-engineering project for the Dropbox Android app exists: `~/projects/REVERSE/project-reverse-android-dropbox`.
+- Its comparison of dbxcli, the public API, and Android search is `context/findings-search-comparison.md` in that project.
+- It is static analysis plus public API documentation; no live Dropbox requests were made.
+- Android-internal endpoints and fields (for example DCS, Ask, date filters, snippets) are research evidence only.
+- Never assume a public CLI token or app key can use them, and never copy Android behavior into `GOAL.md` as a promise.
 - Concrete prioritized search goals live in `GOAL.md`.
 - Search work follows the existing contribution contract: findings, `Authorized-Work`, upstream-first branches, and approval-gated publication.
 - Never treat this goal as authorization to implement a finding or publish to upstream.

@@ -1,6 +1,6 @@
 # ISSUE-038 — Search: doppelte IDs verbrauchen das Ergebnislimit
 
-State: Investigating
+State: Archived
 Authorized-Work: Not-Selected
 Publication-Target: Not-Selected
 External-Reference: Not published.
@@ -63,6 +63,13 @@ Aktuelle Upstream-Prior-Art, Arbeitsmodus, Ziel, exakter Entwurf und Veröffentl
 
 ## Next-Action
 
-Summary: Privaten Abschluss revisionsfest erfassen
-Action: Den geprüften privaten Search-Vertrag committen und auf `origin/personal` pushen.
-Done-When: Commit und Push des vollständigen privaten Vertrags sind mit konkreter Revision belegt.
+Summary: —
+Action: None.
+Done-When: None.
+
+## Archive
+
+Archive-Reason: Other
+Detail: Privater Scope vollständig abgeschlossen; kein aktueller Auftrag für Upstream-Arbeit.
+Evidence: Deduplizierung nach lokaler Filterung und ihre Pagination-Nachweise sind in `547752f` gepusht.
+Checked: 2026-10-22

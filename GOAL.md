@@ -46,7 +46,9 @@ Beobachtete Verifikation am 2026-10-22:
 Es wurden keine neuen Testfunktionen, Testdateien, Abhängigkeiten, Packages oder Endpoints eingeführt.
 Es wurden weder Live-Kontoabfragen noch globale Installation, Transfers oder Upstream-Veröffentlichung ausgeführt.
 Die kombinierte Serverfilterwirkung bleibt deshalb ausdrücklich nicht live bestätigt.
-Die private Abschlussrevision und die abschließende Archivprojektion werden nach dem Implementierungscommit erfasst.
+Die vollständige private Search-Implementierung ist in `547752f` auf `origin/personal` enthalten.
+`ISSUE-003` und `ISSUE-036` bis `ISSUE-039` sind als privater Abschluss mit `Archive-Reason: Other` archiviert.
+Das behauptet keine Upstream-Behebung; offene Listing-, Transfer- und Alt-Completion-Scopes bleiben getrennt erhalten.
 
 ## Grenzen und Nichtziele
 
@@ -422,9 +424,9 @@ Der vorhandene Kontext einschließlich `--timeout` gilt weiterhin für alle seri
 
 ### `cmd/format.go`
 
-Der bestehende Reverse-Komparator negiert `less` und verletzt bei Gleichständen die Sortierordnung.
+Im Ausgangsstand negiert der Reverse-Komparator `less` und verletzt bei Gleichständen die Sortierordnung.
 Die begrenzte Korrektur gehört zum bereits vorhandenen `ISSUE-003`, nicht zu einer neuen Sortierarchitektur.
-Belege: `cmd/format.go:53-79` und `issues/ISSUE-003.md`.
+Belege: `cmd/format.go:compareLess` und `issues/archive/ISSUE-003.md`.
 
 Ordne Reverse zentral in `compareLess()` durch vertauschte Operanden.
 Entferne die zusätzliche Negation aus `sortEntries()`.

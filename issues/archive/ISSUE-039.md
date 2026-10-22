@@ -1,6 +1,6 @@
 # ISSUE-039 — Search: lokale Metadatenfilter fehlen vor der Ergebnisauswahl
 
-State: Investigating
+State: Archived
 Authorized-Work: Not-Selected
 Publication-Target: Not-Selected
 External-Reference: Not published.
@@ -70,6 +70,13 @@ Upstream-Arbeitsmodus, Veröffentlichungsziel, aktuelle Prior Art, exakter Entwu
 
 ## Next-Action
 
-Summary: Privaten Abschluss revisionsfest erfassen
-Action: Den geprüften privaten Search-Vertrag committen und auf `origin/personal` pushen.
-Done-When: Commit und Push des vollständigen privaten Vertrags sind mit konkreter Revision belegt.
+Summary: —
+Action: None.
+Done-When: None.
+
+## Archive
+
+Archive-Reason: Other
+Detail: Privater Scope vollständig abgeschlossen; kein aktueller Auftrag für Upstream-Arbeit.
+Evidence: Lokale Filter, präsenzkorrekte Discovery und alle vorhandenen Vertragsprüfungen sind in `547752f` gepusht.
+Checked: 2026-10-22

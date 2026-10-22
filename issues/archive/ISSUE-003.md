@@ -1,6 +1,6 @@
 # ISSUE-003 — Rückwärtssortierung: instabile Reihenfolge bei gleichen Schlüsseln
 
-State: Investigating
+State: Archived
 Authorized-Work: Not-Selected
 Publication-Target: Not-Selected
 External-Reference: Not published.
@@ -86,6 +86,13 @@ Die Nachweise benötigen weder Dropbox-Abfragen noch persistierte Zustandsänder
 
 ## Next-Action
 
-Summary: Private Korrektur im Ledger abschließen
-Action: Den belegten privaten Fix ohne behauptete Upstream-Lösung als privaten Abschluss archivieren.
-Done-When: Die Akte enthält den Commitnachweis und der Index projiziert den begründeten privaten Abschluss.
+Summary: —
+Action: None.
+Done-When: None.
+
+## Archive
+
+Archive-Reason: Other
+Detail: Privater Scope vollständig abgeschlossen; kein aktueller Auftrag für Upstream-Arbeit.
+Evidence: Fix `d36e7f6` und Search-Vertrag `547752f` sind geprüft und auf `origin/personal` gepusht.
+Checked: 2026-10-22

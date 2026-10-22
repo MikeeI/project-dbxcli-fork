@@ -25,7 +25,6 @@ Der Dot-Segment-Fall bleibt ohne belegte Authority blockiert.
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | [ISSUE-001](issues/ISSUE-001.md) | Uploads: vermeidbare Zwischenpuffer für vollständige Chunks | Investigating | Not-Selected | Not-Selected | Medium | Allokationsdruck ohne Produktivänderungen messen | Not published. |
 | [ISSUE-002](issues/ISSUE-002.md) | CLI-Start: unnötige Namespace-Abfrage bei account und du | Investigating | Not-Selected | Not-Selected | Low | Prior Art vollständig recherchieren | Not published. |
-| [ISSUE-003](issues/ISSUE-003.md) | Rückwärtssortierung: instabile Reihenfolge bei gleichen Schlüsseln | Investigating | Not-Selected | Not-Selected | Medium | Private Korrektur im Ledger abschließen | Not published. |
 | [ISSUE-004](issues/ISSUE-004.md) | Uploads: doppelte Traversierung für Planung und Ausführung | Investigating | Not-Selected | Not-Selected | Low | Traversierungsrefaktorierung gegen Prior Art prüfen | Not published. |
 | [ISSUE-005](issues/ISSUE-005.md) | CLI-Metadaten: getrennte Register und redundanter Auditstatus | Investigating | Not-Selected | Not-Selected | Low | Registervereinfachung gegen Prior Art prüfen | Not published. |
 | [ISSUE-006](issues/ISSUE-006.md) | Downloads: Exportnamen überschreiben andere rekursive Quellen | Investigating | Not-Selected | Not-Selected | High | Exportkollision gegen Prior Art prüfen | Not published. |
@@ -58,12 +57,13 @@ Der Dot-Segment-Fall bleibt ohne belegte Authority blockiert.
 | [ISSUE-033](issues/ISSUE-033.md) | Uploads: revisionsgebundenes Zurückschreiben fehlt im Bearbeitungszyklus | Investigating | Not-Selected | Not-Selected | Low | Bedarf für Revisionsbedingung bestätigen | Not published. |
 | [ISSUE-034](issues/ISSUE-034.md) | Ergebnislisten: begrenzte Ausschnitte bleiben unmarkiert | Investigating | Not-Selected | Not-Selected | Medium | Verbleibende Listing-Kürzung offline abgrenzen | Not published. |
 | [ISSUE-035](issues/ISSUE-035.md) | Uploadstatus: Lesefortschritt wirkt wie bestätigte Übertragung | Investigating | Not-Selected | Not-Selected | Low | Uploadstatus bei Verzögerung prüfen | Not published. |
-| [ISSUE-036](issues/ISSUE-036.md) | Search: öffentliche Kategorie- und Erweiterungsfilter fehlen | Investigating | Not-Selected | Not-Selected | Medium | Privaten Abschluss revisionsfest erfassen | Not published. |
-| [ISSUE-037](issues/ISSUE-037.md) | Search: Matchtyp und Titel-Highlights gehen verloren | Investigating | Not-Selected | Not-Selected | Medium | Privaten Abschluss revisionsfest erfassen | Not published. |
-| [ISSUE-038](issues/ISSUE-038.md) | Search: doppelte IDs verbrauchen das Ergebnislimit | Investigating | Not-Selected | Not-Selected | Medium | Privaten Abschluss revisionsfest erfassen | Not published. |
-| [ISSUE-039](issues/ISSUE-039.md) | Search: lokale Metadatenfilter fehlen vor der Ergebnisauswahl | Investigating | Not-Selected | Not-Selected | Medium | Privaten Abschluss revisionsfest erfassen | Not published. |
 
 ## Archived-Findings
 
 | ID | Finding | Authorized-Work | Publication-Target | Contribution-Priority | Archive-Reason | External-Reference |
 | --- | --- | --- | --- | --- | --- | --- |
+| [ISSUE-003](issues/archive/ISSUE-003.md) | Rückwärtssortierung: instabile Reihenfolge bei gleichen Schlüsseln | Not-Selected | Not-Selected | Medium | Other | Not published. |
+| [ISSUE-036](issues/archive/ISSUE-036.md) | Search: öffentliche Kategorie- und Erweiterungsfilter fehlen | Not-Selected | Not-Selected | Medium | Other | Not published. |
+| [ISSUE-037](issues/archive/ISSUE-037.md) | Search: Matchtyp und Titel-Highlights gehen verloren | Not-Selected | Not-Selected | Medium | Other | Not published. |
+| [ISSUE-038](issues/archive/ISSUE-038.md) | Search: doppelte IDs verbrauchen das Ergebnislimit | Not-Selected | Not-Selected | Medium | Other | Not published. |
+| [ISSUE-039](issues/archive/ISSUE-039.md) | Search: lokale Metadatenfilter fehlen vor der Ergebnisauswahl | Not-Selected | Not-Selected | Medium | Other | Not published. |

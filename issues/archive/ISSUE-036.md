@@ -1,6 +1,6 @@
 # ISSUE-036 — Search: öffentliche Kategorie- und Erweiterungsfilter fehlen
 
-State: Investigating
+State: Archived
 Authorized-Work: Not-Selected
 Publication-Target: Not-Selected
 External-Reference: Not published.
@@ -65,6 +65,13 @@ Die private Implementierungsfreigabe ersetzt diese Voraussetzungen nicht.
 
 ## Next-Action
 
-Summary: Privaten Abschluss revisionsfest erfassen
-Action: Den geprüften privaten Search-Vertrag committen und auf `origin/personal` pushen.
-Done-When: Commit und Push des vollständigen privaten Vertrags sind mit konkreter Revision belegt.
+Summary: —
+Action: None.
+Done-When: None.
+
+## Archive
+
+Archive-Reason: Other
+Detail: Privater Scope vollständig abgeschlossen; kein aktueller Auftrag für Upstream-Arbeit.
+Evidence: Die Serverfilter sind mit Schemas und Nachweisen in `547752f` auf `origin/personal` enthalten.
+Checked: 2026-10-22

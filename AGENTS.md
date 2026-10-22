@@ -88,6 +88,7 @@ Dropbox engineers maintain upstream, but it is not a formally supported Dropbox 
 - Prefer improvements that use the existing `files/search_v2` and `files/search/continue_v2` endpoints and the pinned SDK before proposing new endpoints.
 - Android-internal endpoints and fields are research evidence only; never assume a public CLI token or app key can use them.
 - Related evidence lives in the reverse-engineering project: `~/projects/REVERSE/project-reverse-android-dropbox/context/findings-search-comparison.md`.
+- Concrete prioritized search goals live in `GOAL.md`.
 - Search work follows the existing contribution contract: findings, `Authorized-Work`, upstream-first branches, and approval-gated publication.
 - Never treat this goal as authorization to implement a finding or publish to upstream.
 

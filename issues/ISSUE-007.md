@@ -15,6 +15,8 @@ Source: `upstream/master@8fc3850baecaaa751e85b1673f619d29b68f3b76`
 
 Root-Cause [S]: Worker senden blockierend auf einen Fehlerkanal, dessen Eigentümer erst nach `wg.Wait()` liest.
 Gesprächsreferenz: `E2`; der Review bestätigt Deadlock und unvollständige Worker-Lebensdauer.
+Zusätzliche Gesprächsreferenz: Swarm-Explore-Review `E1`; Quellen: Pain Points, Threshold.
+Dieser Review bestätigt die Ursache aus dem Source, ohne den gesondert dokumentierten Audit-Smoke erneut auszuführen.
 
 ## Reach-and-Impact
 
@@ -29,6 +31,8 @@ Der Netzwerk-Timeout löst den nackten Channel-Send nicht auf; daraus wird keine
 - [S] `cmd/put.go:177-181` wartet vor dem ersten abschließenden Fehlerempfang auf sämtliche Worker.
 - [S] `cmd/put.go:150-171` besitzt zusätzlich frühe Rückkehrpfade ohne geschlossenen Arbeitskanal und Worker-Abschluss.
 - [O] Der aktuelle Source-Abgleich zum frisch abgerufenen angegebenen Upstream zeigt keine Produktionsdifferenz.
+- [S] `cmd/put.go:58-65` verwendet für Appends und Retries derzeit den globalen Kommando-Kontext.
+- [S] `cmd/retry.go:108-141` besitzt bereits `retryWithBackoffContext` für uploadlokalen Abbruch.
 
 ## Bug-Reproduction
 
@@ -47,8 +51,10 @@ Contribution fit: Eine Lifecycle-Korrektur muss sämtliche Worker-Ausgänge abde
 
 ## Proposed-Change
 
-Den ersten Workerfehler nichtblockierend veröffentlichen und weitere Produktion abbrechen.
-Arbeitskanal und gestartete Worker auf jedem Ausgang zuverlässig beenden und abwarten.
+Uploadlokalen Abbruchkontext durch Append-Aufrufe und Retry-Wartezeiten führen.
+Den ersten Workerfehler nichtblockierend erhalten und weitere Produktion abbrechen.
+Arbeitskanal auf jedem Rückkehrpfad schließen und alle gestarteten Worker abwarten.
+Nach Fehler keinen Finish ausführen; eine isolierte Kanaländerung ist keine vollständige Lifecycle-Korrektur.
 
 ## Scope-and-Constraints
 
@@ -61,6 +67,7 @@ Arbeitskanal und gestartete Worker auf jedem Ausgang zuverlässig beenden und ab
 
 Abgeschlossen [O]: Der beschriebene Offline-Smoke reproduziert die zyklische Wartesituation.
 Erforderlich: Mehrere Append-Fehler nach Jobproduktion sowie frühe Quell-Lesefehler prüfen.
+Zusätzlich Kontextabbruch prüfen; Append und Retry-Wartezeiten müssen denselben uploadlokalen Kontext verwenden.
 Erwartet: Begrenzte Rückkehr mit ursprünglicher Ursache und ohne verbleibende Worker.
 Test decision: none; keine Source- oder Teständerung in diesem Auftrag.
 

@@ -17,6 +17,8 @@ Root-Cause [S]: `sortEntries` negiert bei Rückwärtssortierung das Ergebnis von
 Bei gleichen Schlüsseln werden dadurch beide Vergleichsrichtungen wahr.
 Der Komparator verletzt die strikte schwache Ordnung des verwendeten `sort.SliceStable`.
 Gesprächsreferenz: `CW2`; der anschließende Review bestätigt Ursache und lokale Korrektur.
+Zusätzliche Gesprächsreferenz: Swarm-Explore-Review `E3`; Quelle: Cheap Wins.
+Der Review bestätigt vertauschte Operanden ohne zusätzliche Gleichstandsregel.
 
 ## Reach-and-Impact
 

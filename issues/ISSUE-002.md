@@ -16,6 +16,8 @@ Source: `upstream/master@8fc3850baecaaa751e85b1673f619d29b68f3b76`
 Root-Cause [S]: `initDbx` ermittelt für `account` und `du` einen Root-Namespace, den deren Nutzabfragen nicht benötigen.
 Dafür wird seriell `GetCurrentAccountContext` aufgerufen, bevor das eigentliche Kommando beginnt.
 Gesprächsreferenzen: `P2` und `CW1`; beide Reviews bestätigen denselben eng begrenzten Vorschlag.
+Zusätzliche Gesprächsreferenz: Swarm-Explore-Review `E14`; Quellen: Cheap Wins, Pain Points.
+Der Review bestätigt Low als technische Priorität trotz günstiger Umsetzung.
 
 ## Reach-and-Impact
 

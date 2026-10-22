@@ -16,6 +16,8 @@ Source: `upstream/master@8fc3850baecaaa751e85b1673f619d29b68f3b76`
 Root-Cause [S]: Rekursive Upload-Planung und Ausführung besitzen getrennte Implementierungen derselben Traversierungsregeln.
 Der Kommentar bei `cmd/put.go:842` verlangt ausdrücklich übereinstimmende Semantik.
 Gesprächsreferenz: `S1`; der anschließende Review bestätigt den begrenzten Wartbarkeitsvorschlag.
+Zusätzliche Gesprächsreferenz: Swarm-Explore-Review `E18`; Quelle: Seam.
+Der Review bestätigt `opts.dryRun` im bestehenden Owner statt einer neuen Traversierungs-/Verbraucherabstraktion.
 
 ## Reach-and-Impact
 

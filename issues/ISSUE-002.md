@@ -15,7 +15,7 @@ Source: `upstream/master@8fc3850baecaaa751e85b1673f619d29b68f3b76`
 
 Root-Cause [S]: `initDbx` ermittelt für `account` und `du` einen Root-Namespace, den deren Nutzabfragen nicht benötigen.
 Dafür wird seriell `GetCurrentAccountContext` aufgerufen, bevor das eigentliche Kommando beginnt.
-Gesprächsreferenz: `P2`; der anschließende Review bestätigt den eng begrenzten Vorschlag.
+Gesprächsreferenzen: `P2` und `CW1`; beide Reviews bestätigen denselben eng begrenzten Vorschlag.
 
 ## Reach-and-Impact
 
@@ -46,7 +46,8 @@ Measurement status: RPC-Anzahl aus dem Kontrollfluss abgeleitet; keine Live-Kont
 
 ## Prior-Art
 
-Coverage: Lokaler Index und `issues/` am 2026-10-22 geprüft; keine vorhandenen Finding-Datensätze.
+Coverage: Der aktuelle Index und die Akten `ISSUE-001` bis `ISSUE-003` wurden auf gleiche Ursachen geprüft.
+`CW1` bestätigt den vorhandenen Namespace-Befund und wird nicht als zweite Finding angelegt.
 Gaps: Upstream-Issues, PRs, Diskussionen und Releases wurden für diesen Befund noch nicht recherchiert.
 Contribution fit: Offen; bestehende Arbeiten und der Nutzen eines kleinen separaten Beitrags sind zu prüfen.
 
@@ -66,6 +67,10 @@ Die Änderung ist ein Vorschlag und nicht zur Implementierung autorisiert.
 - Exclude: Die Ausnahme nicht auf weitere ungeprüfte Kommandos ausweiten.
 - Exclude: Keine neue Lazy-Initialisierungsarchitektur und kein Namespace- oder Account-Cache.
 - Cost: Die überflüssige Namespace-Warnung und deren Request-Logging entfallen bewusst bei diesen beiden Kommandos.
+- Compatibility: Der initiale Namespace-RPC entfällt auch als unbeabsichtigter zusätzlicher Versuch bei transienten Fehlern.
+- Preserve: Keine zugesicherte Retry-Funktion ersetzen; die Fehlerbehandlung des eigentlichen Nutzaufrufs bleibt erhalten.
+- Cost: Die Cheap-Win-Einstufung ist Medium; die bestehende Beitragspriorität bleibt wegen ungemessener Wirkung Low.
+- Rollback: Nur die Ausnahme für diese beiden Befehle zurücknehmen; persistierter Zustand ist nicht betroffen.
 
 ## Verification
 
@@ -73,7 +78,9 @@ Abgeschlossen [O]: Source-Abgleich mit dem frisch abgerufenen kanonischen Upstre
 Nicht ausgeführt: Implementierung, Tests, Kontoabfragen und Laufzeitmessungen.
 Nach autorisierter Implementierung ist folgende Verifikation erforderlich:
 
-- Ein kontrolliertes Smoke-Szenario muss je regulärem Aufruf einen Nutz-RPC ohne Namespace-RPC nachweisen.
+- Die Initialisierung samt Handler offline für beide Auth-Quellen und alle drei Nutzabfragen ausführen.
+- `account` ohne ID muss genau eine Current-Account-Operation statt zwei ausführen.
+- `account <id>` und `du` dürfen keine vorgeschaltete Current-Account-Operation mehr ausführen.
 - Text-/JSON-Ausgabe, direkte Tokens, gespeicherte Credentials, Refresh und `--as-member` sind zu prüfen.
 - Fehler des Nutzendpunkts müssen erhalten bleiben; der entfallene Namespace-Hinweis ist kein Ausgaberegressionsfehler.
 - Ein dateipfadabhängiges Kommando muss seinen bisherigen Root-Namespace weiterhin erhalten.

@@ -10,6 +10,14 @@ This file records goals and priorities only.
 It does not authorize implementation or upstream publication.
 Each goal still needs a finding in `ISSUES.md` and an explicit `Authorized-Work` selection.
 
+## Contribution Intent
+
+Every goal below is meant to reach official upstream `dropbox/dbxcli` as its own pull request.
+The aim is that all dbxcli users benefit, not only this fork.
+Each pull request carries one coherent root cause, branches from current `upstream/master`, and stays free of fork-only files.
+The fork's `personal` branch is not a delivery target for these goals.
+Publication to upstream still requires the user's approval of the exact draft and target.
+
 ## Scope Boundary
 
 - Use only `files/search_v2` and `files/search/continue_v2` plus the pinned Go SDK (`dropbox-sdk-go-unofficial/v6@v6.6.2`).

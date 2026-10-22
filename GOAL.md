@@ -12,11 +12,11 @@ Each goal still needs a finding in `ISSUES.md` and an explicit `Authorized-Work`
 
 ## Contribution Intent
 
-Every goal below is meant to reach official upstream `dropbox/dbxcli` as its own pull request.
-The aim is that all dbxcli users benefit, not only this fork.
-Each pull request carries one coherent root cause, branches from current `upstream/master`, and stays free of fork-only files.
-The fork's `personal` branch is not a delivery target for these goals.
-Publication to upstream still requires the user's approval of the exact draft and target.
+These goals are for this fork only.
+Upstream `dropbox/dbxcli` is an official Dropbox project, and upstream interest in these changes is unlikely.
+Goals are implemented on the fork's `personal` branch and are not prepared as upstream pull requests.
+Upstream publication happens only if the user later decides so and approves the exact draft and target.
+Staying close to upstream code and conventions remains useful so that merging future upstream releases stays cheap.
 
 ## Scope Boundary
 

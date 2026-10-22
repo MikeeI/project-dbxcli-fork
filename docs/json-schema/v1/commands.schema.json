@@ -981,6 +981,9 @@
         "schema_version": {
           "const": "1"
         },
+        "search": {
+          "$ref": "#/$defs/search_summary"
+        },
         "warnings": {
           "$ref": "#/$defs/warnings_search"
         }
@@ -2340,7 +2343,7 @@
           ]
         },
         "result": {
-          "$ref": "#/$defs/metadata"
+          "$ref": "#/$defs/search_metadata"
         },
         "status": {
           "enum": [
@@ -2801,18 +2804,95 @@
       ],
       "type": "object"
     },
+    "search_highlight_span": {
+      "additionalProperties": false,
+      "properties": {
+        "highlight_str": {
+          "type": "string"
+        },
+        "is_highlighted": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "highlight_str",
+        "is_highlighted"
+      ],
+      "type": "object"
+    },
     "search_input": {
       "additionalProperties": false,
       "properties": {
+        "category": {
+          "items": {
+            "enum": [
+              "audio",
+              "document",
+              "folder",
+              "image",
+              "others",
+              "paper",
+              "pdf",
+              "presentation",
+              "spreadsheet",
+              "video"
+            ],
+            "type": "string"
+          },
+          "type": "array"
+        },
         "content": {
           "type": "boolean"
         },
+        "exclude_name_contains": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "ext": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "highlights": {
+          "type": "boolean"
+        },
         "limit": {
+          "maximum": 18446744073709551615,
           "minimum": 0,
           "type": "integer"
         },
         "long": {
           "type": "boolean"
+        },
+        "max_size": {
+          "maximum": 18446744073709551615,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "min_size": {
+          "maximum": 18446744073709551615,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "modified_before": {
+          "format": "date-time",
+          "type": "string"
+        },
+        "modified_from": {
+          "format": "date-time",
+          "type": "string"
+        },
+        "name_contains": {
+          "type": "string"
+        },
+        "name_glob": {
+          "type": "string"
+        },
+        "name_regex": {
+          "type": "string"
         },
         "order_by": {
           "enum": [
@@ -2848,6 +2928,13 @@
         },
         "time_format": {
           "type": "string"
+        },
+        "type": {
+          "enum": [
+            "file",
+            "folder"
+          ],
+          "type": "string"
         }
       },
       "required": [
@@ -2855,6 +2942,108 @@
         "long",
         "query",
         "reverse"
+      ],
+      "type": "object"
+    },
+    "search_metadata": {
+      "additionalProperties": false,
+      "properties": {
+        "client_modified": {
+          "format": "date-time",
+          "type": "string"
+        },
+        "deleted": {
+          "type": "boolean"
+        },
+        "highlight_spans": {
+          "items": {
+            "$ref": "#/$defs/search_highlight_span"
+          },
+          "type": "array"
+        },
+        "id": {
+          "type": "string"
+        },
+        "match_type": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "path_display": {
+          "type": "string"
+        },
+        "path_lower": {
+          "type": "string"
+        },
+        "rev": {
+          "type": "string"
+        },
+        "server_modified": {
+          "format": "date-time",
+          "type": "string"
+        },
+        "size": {
+          "maximum": 18446744073709551615,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "type": {
+          "enum": [
+            "deleted",
+            "file",
+            "folder"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "type": "object"
+    },
+    "search_summary": {
+      "additionalProperties": false,
+      "properties": {
+        "api_match_limit": {
+          "const": 10000,
+          "type": "integer"
+        },
+        "api_matches_seen": {
+          "maximum": 18446744073709551615,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "limit": {
+          "maximum": 18446744073709551615,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "local_filters_applied": {
+          "type": "boolean"
+        },
+        "server_has_more": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "stop_reason": {
+          "enum": [
+            "api_exhausted",
+            "error",
+            "limit"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "api_match_limit",
+        "api_matches_seen",
+        "limit",
+        "local_filters_applied",
+        "server_has_more",
+        "stop_reason"
       ],
       "type": "object"
     },

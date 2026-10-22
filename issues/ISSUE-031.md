@@ -54,10 +54,15 @@ Fehlerdetails, öffentliches Schema und Dokumentation gemeinsam erweitern.
 
 ## Verification
 
-Quellprüfung abgeschlossen; kein Transfer, Test oder Teilergebnis-Smoke ausgeführt.
+Der ursprüngliche Tracking-Auftrag enthielt keine Transfers oder gezielten Teilergebnis-Smokes.
 Vorgeschlagen: Rekursiven Lauf mit erfolgreicher Datei und späterem Fehler prüfen.
 Bestätigte Resultate müssen enthalten sein und die Antwort muss das aktualisierte Fehlerschema erfüllen.
 Test decision: none; nur Tracking, keine Source- oder Teständerung.
+
+Privater Search-Teilstand [O]: Die vorhandenen Search-Fehler- und Live-Schematests bestehen mit erhaltenen Teilergebnissen.
+`error.details.partial_results` ist dabei als Search-Ergebnisform definiert, nicht als allgemeiner Transfervertrag.
+Der vorgeschlagene rekursive `get`-Scope mit `completed_results` bleibt unverändert offen.
+Die Nutzerfreigabe für `GOAL.md` autorisiert keine Ausweitung auf diese schreibenden Sammeloperationen.
 
 ## Publication-Blockers
 

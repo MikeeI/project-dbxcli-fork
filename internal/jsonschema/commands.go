@@ -21,8 +21,9 @@ import (
 )
 
 const (
-	Draft202012            = "https://json-schema.org/draft/2020-12/schema"
-	CommandSuccessSchemaID = "https://raw.githubusercontent.com/dropbox/dbxcli/master/docs/json-schema/v1/commands.schema.json"
+	Draft202012                   = "https://json-schema.org/draft/2020-12/schema"
+	CommandSuccessSchemaID        = "https://raw.githubusercontent.com/dropbox/dbxcli/master/docs/json-schema/v1/commands.schema.json"
+	SearchAPIMatchLimit    uint64 = 10_000
 )
 
 type CommandCatalog struct {
@@ -39,6 +40,7 @@ type CommandContract struct {
 	Statuses      []string `json:"statuses"`
 	Kinds         []string `json:"kinds"`
 	Warnings      []string `json:"warnings"`
+	SearchSummary *string  `json:"search_summary,omitempty"`
 }
 
 func DecodeCommandCatalog(data []byte) (CommandCatalog, error) {
@@ -115,6 +117,11 @@ func validateCommandContract(command string, contract CommandContract, definitio
 			return fmt.Errorf("%s: unknown definition %q", command, refName)
 		}
 	}
+	if contract.SearchSummary != nil {
+		if _, ok := definitions[*contract.SearchSummary]; !ok {
+			return fmt.Errorf("%s: unknown search_summary definition %q", command, *contract.SearchSummary)
+		}
+	}
 	if contract.ResultInput == nil {
 		return fmt.Errorf("%s: missing result_input", command)
 	}
@@ -131,21 +138,23 @@ func validateCommandContract(command string, contract CommandContract, definitio
 }
 
 func commandSuccessSchema(command string, contract CommandContract, resultDef string, warningDef string) map[string]any {
+	properties := map[string]any{
+		"ok":             map[string]any{"const": true},
+		"schema_version": map[string]any{"const": "1"},
+		"command":        map[string]any{"const": command},
+		"input":          ref(contract.Input),
+		"results":        map[string]any{"type": "array", "items": ref(resultDef)},
+		"warnings":       ref(warningDef),
+	}
+	if contract.SearchSummary != nil {
+		properties["search"] = ref(*contract.SearchSummary)
+	}
 	return map[string]any{
 		"type":                 "object",
 		"additionalProperties": false,
-		"required":             []string{"ok", "schema_version", "command", "input", "results", "warnings"},
-		"properties": map[string]any{
-			"ok":             map[string]any{"const": true},
-			"schema_version": map[string]any{"const": "1"},
-			"command":        map[string]any{"const": command},
-			"input":          ref(contract.Input),
-			"results": map[string]any{
-				"type":  "array",
-				"items": ref(resultDef),
-			},
-			"warnings": ref(warningDef),
-		},
+		// New producers always emit search; keeping it optional accepts older v1 responses.
+		"required":   []string{"ok", "schema_version", "command", "input", "results", "warnings"},
+		"properties": properties,
 	}
 }
 

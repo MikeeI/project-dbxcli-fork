@@ -65,6 +65,10 @@ func commandInputSchemaFor(args []jsonCommandArg, flags []jsonCommandFlag) jsonC
 			XShorthand:  flag.Shorthand,
 			XMayPrompt:  flag.MayPrompt,
 		}
+		if propertyType == "array" {
+			property.Items = &jsonCommandInputProperty{Type: "string", Enum: property.Enum}
+			property.Enum = nil
+		}
 		if format := commandInputPropertyFormat(flag.ValueKind); format != "" {
 			property.Format = format
 		}
@@ -127,6 +131,9 @@ func commandInputPropertyName(name string) string {
 }
 
 func commandInputPropertyType(valueKind string, flagType string) string {
+	if flagType == "stringSlice" || flagType == "stringArray" {
+		return "array"
+	}
 	switch valueKind {
 	case "boolean":
 		return "boolean"
@@ -162,7 +169,7 @@ func commandInputPropertyFormat(valueKind string) string {
 }
 
 func commandInputFlagDefault(flag jsonCommandFlag, propertyType string) (any, bool) {
-	if flag.Default == "" {
+	if flag.Default == "" || flag.omitInputDefault || propertyType == "array" {
 		return nil, false
 	}
 

@@ -233,9 +233,42 @@ var commandDefinitionSchemas = map[string]definitionSchemaConfig{
 	"search_input": {
 		Required: []string{"content", "long", "query", "reverse"},
 		Properties: map[string]any{
-			"order_by": stringEnum("modified", "relevance"),
-			"sort":     stringEnum("name", "size", "time", "type"),
-			"time":     stringEnum("client", "server"),
+			"order_by":              stringEnum("modified", "relevance"),
+			"sort":                  stringEnum("name", "size", "time", "type"),
+			"time":                  stringEnum("client", "server"),
+			"category":              arraySchema(stringEnum("image", "document", "pdf", "spreadsheet", "presentation", "audio", "video", "folder", "paper", "others")),
+			"ext":                   stringArraySchema(),
+			"exclude_name_contains": stringArraySchema(),
+			"highlights":            booleanSchema(),
+			"limit":                 uint64Schema(),
+			"min_size":              uint64Schema(),
+			"max_size":              uint64Schema(),
+			"modified_from":         dateTimeStringSchema(),
+			"modified_before":       dateTimeStringSchema(),
+			"type":                  stringEnum("file", "folder"),
+		},
+	},
+	"search_metadata": {
+		Required: []string{"type"},
+		Properties: map[string]any{
+			"type":            stringEnum("deleted", "file", "folder"),
+			"size":            uint64Schema(),
+			"highlight_spans": arraySchema(schemaRef("search_highlight_span")),
+		},
+	},
+	"search_highlight_span": {
+		Required:   []string{"highlight_str", "is_highlighted"},
+		Properties: map[string]any{"is_highlighted": booleanSchema()},
+	},
+	"search_summary": {
+		Required: []string{"limit", "stop_reason", "server_has_more", "local_filters_applied", "api_matches_seen", "api_match_limit"},
+		Properties: map[string]any{
+			"limit":                 uint64Schema(),
+			"stop_reason":           stringEnum("api_exhausted", "limit", "error"),
+			"server_has_more":       map[string]any{"type": []string{"boolean", "null"}},
+			"local_filters_applied": booleanSchema(),
+			"api_matches_seen":      uint64Schema(),
+			"api_match_limit":       map[string]any{"type": "integer", "const": SearchAPIMatchLimit},
 		},
 	},
 	"share_folder": {
@@ -380,6 +413,10 @@ func integerSchema() map[string]any {
 		"type":    "integer",
 		"minimum": 0,
 	}
+}
+
+func uint64Schema() map[string]any {
+	return map[string]any{"type": "integer", "minimum": 0, "maximum": uint64(1<<64 - 1)}
 }
 
 func dateTimeStringSchema() map[string]any {

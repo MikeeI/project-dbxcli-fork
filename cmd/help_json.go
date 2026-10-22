@@ -65,6 +65,8 @@ type jsonCommandFlag struct {
 	Sensitive  bool     `json:"sensitive"`
 	MayPrompt  bool     `json:"may_prompt"`
 	ValueKind  string   `json:"value_kind"`
+	// Cobra's technical zero is not a semantic default for presence-sensitive filters.
+	omitInputDefault bool
 }
 
 type jsonCommandArg struct {
@@ -435,18 +437,19 @@ func jsonCommandFlags(cmd *cobra.Command, metadata map[string]jsonCommandFlagMet
 			}
 			flagMeta := metadata[flag.Name]
 			flagsByName[flag.Name] = jsonCommandFlag{
-				Name:       flag.Name,
-				Type:       flagType,
-				Default:    flag.DefValue,
-				Usage:      flag.Usage,
-				Inherited:  inherited,
-				Shorthand:  flag.Shorthand,
-				EnumValues: sortedCopyStringSlice(flagMeta.EnumValues),
-				Conflicts:  sortedCopyStringSlice(flagMeta.Conflicts),
-				Required:   flagMeta.Required,
-				Sensitive:  flagMeta.Sensitive,
-				MayPrompt:  flagMeta.MayPrompt,
-				ValueKind:  commandManifestFlagValueKind(flag, flagMeta),
+				Name:             flag.Name,
+				Type:             flagType,
+				Default:          flag.DefValue,
+				Usage:            flag.Usage,
+				Inherited:        inherited,
+				Shorthand:        flag.Shorthand,
+				EnumValues:       sortedCopyStringSlice(flagMeta.EnumValues),
+				Conflicts:        sortedCopyStringSlice(flagMeta.Conflicts),
+				Required:         flagMeta.Required,
+				Sensitive:        flagMeta.Sensitive,
+				MayPrompt:        flagMeta.MayPrompt,
+				ValueKind:        commandManifestFlagValueKind(flag, flagMeta),
+				omitInputDefault: flagMeta.OmitInputDefault,
 			}
 		})
 	}

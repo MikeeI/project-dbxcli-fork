@@ -13,6 +13,9 @@
     "warnings"
   ],
   "properties": {
+    "search": {
+      "$ref": "#/$defs/search_summary"
+    },
     "ok": {
       "const": true
     },
@@ -41,6 +44,19 @@
     }
   },
   "$defs": {
+    "search_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["limit", "stop_reason", "server_has_more", "local_filters_applied", "api_matches_seen", "api_match_limit"],
+      "properties": {
+        "limit": {"type": "integer", "minimum": 0, "maximum": 18446744073709551615},
+        "stop_reason": {"type": "string", "enum": ["api_exhausted", "limit", "error"]},
+        "server_has_more": {"type": ["boolean", "null"]},
+        "local_filters_applied": {"type": "boolean"},
+        "api_matches_seen": {"type": "integer", "minimum": 0, "maximum": 18446744073709551615},
+        "api_match_limit": {"type": "integer", "const": 10000}
+      }
+    },
     "result": {
       "type": "object",
       "additionalProperties": false,

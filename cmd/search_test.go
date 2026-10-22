@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/dropbox/dropbox-sdk-go-unofficial/v6/dropbox"
 	"github.com/dropbox/dropbox-sdk-go-unofficial/v6/dropbox/files"
@@ -139,55 +140,63 @@ func TestRenderSearchResultsLongModeIncludesHeader(t *testing.T) {
 
 func TestSearchUsesSearchV2AndCommandOutput(t *testing.T) {
 	cmd, stdout := testSearchCmd()
+	for name, value := range map[string]string{
+		"limit": "2", searchFlagNameGlob: "*.pdf", searchFlagNameRegex: "(?i)report",
+		searchFlagNameContains: "Report", searchFlagExcludeNameContains: "Draft,old",
+		searchFlagMinSize: "0", searchFlagMaxSize: "42", searchFlagType: searchEntryTypeFile,
+		searchFlagModifiedFrom: "2026-01-01T00:00:00Z", searchFlagModifiedBefore: "2027-01-01T00:00:00Z",
+		"time": "client",
+	} {
+		setSearchFlag(t, cmd, name, value)
+	}
+	first := &files.FileMetadata{
+		Metadata: files.Metadata{Name: "Report-first.pdf", PathDisplay: "/docs/Report-first.pdf"},
+		Id:       "id:first", ClientModified: dropbox.DBXTime(time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)),
+	}
+	later := &files.FileMetadata{
+		Metadata: files.Metadata{Name: "Report-second.pdf", PathDisplay: "/docs/Report-second.pdf"},
+		Id:       "id:version", Size: 42, ClientModified: first.ClientModified,
+	}
+	rejected := *later
+	rejected.Name = "Report-Draft,old.pdf"
 	var firstArg *files.SearchV2Arg
 	var continueCursor string
-
-	mock := &mockFilesClient{
+	stubFilesClient(t, &mockFilesClient{
 		searchV2Fn: func(arg *files.SearchV2Arg) (*files.SearchV2Result, error) {
 			firstArg = arg
-			res := files.NewSearchV2Result([]*files.SearchMatchV2{
-				searchMatch(&files.FileMetadata{
-					Metadata: files.Metadata{PathDisplay: "/docs/first.txt"},
-				}),
+			page := files.NewSearchV2Result([]*files.SearchMatchV2{
+				searchMatch(&rejected),
+				searchMatch(&files.FolderMetadata{Metadata: files.Metadata{Name: "Report-folder.pdf"}, Id: "id:folder"}),
+				searchMatch(first),
 			}, true)
-			res.Cursor = "cursor-1"
-			return res, nil
+			page.Cursor = "cursor-1"
+			return page, nil
 		},
 		searchContinueV2Fn: func(arg *files.SearchV2ContinueArg) (*files.SearchV2Result, error) {
 			continueCursor = arg.Cursor
-			return files.NewSearchV2Result([]*files.SearchMatchV2{
-				searchMatch(&files.FolderMetadata{
-					Metadata: files.Metadata{PathDisplay: "/docs/second"},
-				}),
-			}, false), nil
+			return files.NewSearchV2Result([]*files.SearchMatchV2{searchMatch(first), searchMatch(later)}, false), nil
 		},
-	}
-	stubFilesClient(t, mock)
-
+	})
 	if err := search(cmd, []string{"needle", "/docs"}); err != nil {
-		t.Fatalf("search error: %v", err)
+		t.Fatalf("search: %v", err)
 	}
-
-	if firstArg == nil {
-		t.Fatal("SearchV2 was not called")
+	if firstArg == nil || firstArg.Options == nil || firstArg.Query != "needle" || firstArg.Options.Path != "/docs" || !firstArg.Options.FilenameOnly {
+		t.Fatalf("first request = %#v", firstArg)
 	}
-	if firstArg.Query != "needle" {
-		t.Errorf("query = %q, want %q", firstArg.Query, "needle")
-	}
-	if firstArg.Options == nil || firstArg.Options.Path != "/docs" {
-		t.Fatalf("options path = %#v, want /docs", firstArg.Options)
-	}
-	if !firstArg.Options.FilenameOnly {
-		t.Fatal("filename_only = false, want true by default")
+	if firstArg.Options.MaxResults != files.NewSearchOptions().MaxResults {
+		t.Fatalf("local filters reduced API page size to %d", firstArg.Options.MaxResults)
 	}
 	if continueCursor != "cursor-1" {
-		t.Errorf("continue cursor = %q, want cursor-1", continueCursor)
+		t.Fatalf("continuation cursor = %q", continueCursor)
 	}
-
-	got := stdout.String()
-	for _, want := range []string{"/docs/first.txt", "/docs/second"} {
-		if !strings.Contains(got, want) {
-			t.Errorf("stdout = %q, want to contain %q", got, want)
+	lines := strings.Split(strings.TrimSpace(stdout.String()), "\n")
+	if len(lines) != 2 || strings.TrimSpace(lines[0]) != first.PathDisplay || strings.TrimSpace(lines[1]) != later.PathDisplay {
+		t.Fatalf("filtered distinct results = %q", stdout.String())
+	}
+	status := cmd.ErrOrStderr().(*bytes.Buffer).String()
+	for _, want := range []string{"stop_reason=api_exhausted", "returned=2", "server_has_more=false", "local_filters_applied=true", "api_matches_seen=5"} {
+		if !strings.Contains(status, want) {
+			t.Fatalf("status = %q, missing %q", status, want)
 		}
 	}
 }
@@ -203,14 +212,18 @@ func TestSearchJSONOutputsInputAndResults(t *testing.T) {
 	setSearchFlag(t, cmd, "content", "true")
 	setSearchFlag(t, cmd, "limit", "2")
 	setSearchFlag(t, cmd, "order-by", "modified")
+	setSearchFlag(t, cmd, searchFlagCategory, "document,folder")
+	setSearchFlag(t, cmd, searchFlagExt, ".TXT,docx")
+	setSearchFlag(t, cmd, searchFlagHighlights, "true")
 	var firstArg *files.SearchV2Arg
 
 	mock := &mockFilesClient{
 		searchV2Fn: func(arg *files.SearchV2Arg) (*files.SearchV2Result, error) {
 			firstArg = arg
-			return files.NewSearchV2Result([]*files.SearchMatchV2{
+			matches := []*files.SearchMatchV2{
 				searchMatch(&files.FileMetadata{
 					Metadata: files.Metadata{
+						Name:        "report.txt",
 						PathDisplay: "/docs/report.txt",
 						PathLower:   "/docs/report.txt",
 					},
@@ -220,12 +233,16 @@ func TestSearchJSONOutputsInputAndResults(t *testing.T) {
 				}),
 				searchMatch(&files.FolderMetadata{
 					Metadata: files.Metadata{
+						Name:        "archive",
 						PathDisplay: "/docs/archive",
 						PathLower:   "/docs/archive",
 					},
 					Id: "id:folder",
 				}),
-			}, false), nil
+			}
+			matches[0].MatchType = &files.SearchMatchTypeV2{Tagged: dropbox.Tagged{Tag: files.SearchMatchTypeV2FileContent}}
+			matches[0].HighlightSpans = []*files.HighlightSpan{files.NewHighlightSpan("report", true), files.NewHighlightSpan(".txt", false)}
+			return files.NewSearchV2Result(matches, false), nil
 		},
 	}
 	stubFilesClient(t, mock)
@@ -251,6 +268,11 @@ func TestSearchJSONOutputsInputAndResults(t *testing.T) {
 	if firstArg.Options.OrderBy == nil || firstArg.Options.OrderBy.Tag != files.SearchOrderByLastModifiedTime {
 		t.Fatalf("order_by = %#v, want last_modified_time", firstArg.Options.OrderBy)
 	}
+	if len(firstArg.Options.FileCategories) != 2 || firstArg.Options.FileCategories[0].Tag != files.FileCategoryDocument ||
+		len(firstArg.Options.FileExtensions) != 2 || firstArg.Options.FileExtensions[0] != "txt" ||
+		firstArg.MatchFieldOptions == nil || !firstArg.MatchFieldOptions.IncludeHighlights || firstArg.IncludeHighlights {
+		t.Fatalf("server filter/highlight options = %#v", firstArg)
+	}
 
 	got := decodeSearchOutput(t, stdout)
 	if got.Input.Query != "report" || got.Input.Path != "/docs" {
@@ -265,6 +287,17 @@ func TestSearchJSONOutputsInputAndResults(t *testing.T) {
 	first := got.Results[0].Result
 	if got.Results[0].Status != searchJSONStatusFound || got.Results[0].Kind != "file" || first.Type != "file" || first.Rev != "rev-file" || first.Size == nil || *first.Size != 42 {
 		t.Fatalf("first result = %#v, want found file metadata", got.Results[0])
+	}
+	if first.Name != "report.txt" || first.MatchType != files.SearchMatchTypeV2FileContent ||
+		len(first.HighlightSpans) != 2 || !first.HighlightSpans[0].IsHighlighted {
+		t.Fatalf("search match evidence = %#v", first)
+	}
+	if got.Search.StopReason != searchStopAPIExhausted || got.Search.Limit != 2 ||
+		got.Search.ServerHasMore == nil || *got.Search.ServerHasMore || got.Search.APIMatchesSeen != 2 {
+		t.Fatalf("exact final-page limit = %#v", got.Search)
+	}
+	if !got.Input.Highlights || len(got.Input.Category) != 2 || len(got.Input.Ext) != 2 || got.Input.Ext[0] != "txt" {
+		t.Fatalf("search filter input = %#v", got.Input)
 	}
 	second := got.Results[1].Result
 	if got.Results[1].Status != searchJSONStatusFound || got.Results[1].Kind != "folder" || second.Type != "folder" || second.ID != "id:folder" {
@@ -317,65 +350,113 @@ func TestSearchJSONOmitsPathWithoutScope(t *testing.T) {
 }
 
 func TestSearchLimitCapsResultsAndStopsPagination(t *testing.T) {
-	cmd, stdout := testSearchCmd()
-	setSearchFlag(t, cmd, "limit", "1")
-	var firstArg *files.SearchV2Arg
-
-	mock := &mockFilesClient{
-		searchV2Fn: func(arg *files.SearchV2Arg) (*files.SearchV2Result, error) {
-			firstArg = arg
-			res := files.NewSearchV2Result([]*files.SearchMatchV2{
-				searchMatch(&files.FileMetadata{
-					Metadata: files.Metadata{PathDisplay: "/docs/first.txt"},
-				}),
-				searchMatch(&files.FileMetadata{
-					Metadata: files.Metadata{PathDisplay: "/docs/second.txt"},
-				}),
-			}, true)
-			res.Cursor = "cursor-1"
-			return res, nil
-		},
-		searchContinueV2Fn: func(arg *files.SearchV2ContinueArg) (*files.SearchV2Result, error) {
-			t.Fatalf("SearchContinueV2 was called with cursor %q, want stop after limit", arg.Cursor)
-			return nil, nil
-		},
-	}
-	stubFilesClient(t, mock)
-
-	if err := search(cmd, []string{"needle", "/docs"}); err != nil {
-		t.Fatalf("search error: %v", err)
-	}
-	if firstArg == nil || firstArg.Options == nil {
-		t.Fatal("SearchV2 options were not set")
-	}
-	if firstArg.Options.MaxResults != 1 {
-		t.Fatalf("max_results = %d, want 1", firstArg.Options.MaxResults)
-	}
-	got := stdout.String()
-	if !strings.Contains(got, "/docs/first.txt") {
-		t.Fatalf("stdout = %q, want first result", got)
-	}
-	if strings.Contains(got, "/docs/second.txt") {
-		t.Fatalf("stdout = %q, want second result capped by --limit", got)
+	for _, test := range []struct {
+		name     string
+		extra    bool
+		hasMore  bool
+		wantStop string
+	}{
+		{name: "unvisited pages", hasMore: true, wantStop: searchStopLimit},
+		{name: "unreturned last-page match", extra: true, wantStop: searchStopLimit},
+		{name: "exact final page with duplicate", wantStop: searchStopAPIExhausted},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			cmd, stdout := testSearchCmd()
+			setSearchOutputJSON(t, cmd)
+			setSearchFlag(t, cmd, "limit", "1")
+			first := searchMatch(&files.FileMetadata{Metadata: files.Metadata{Name: "first.txt", PathDisplay: "/docs/first.txt"}, Id: "id:first"})
+			stubFilesClient(t, &mockFilesClient{
+				searchV2Fn: func(arg *files.SearchV2Arg) (*files.SearchV2Result, error) {
+					if arg.Options.MaxResults != 1 {
+						t.Fatalf("unfiltered page size = %d", arg.Options.MaxResults)
+					}
+					matches := []*files.SearchMatchV2{first, first}
+					if test.extra {
+						matches = append(matches, searchMatch(&files.FileMetadata{Metadata: files.Metadata{Name: "second.txt"}, Id: "id:second"}))
+					}
+					page := files.NewSearchV2Result(matches, test.hasMore)
+					page.Cursor = "next"
+					return page, nil
+				},
+				searchContinueV2Fn: func(arg *files.SearchV2ContinueArg) (*files.SearchV2Result, error) {
+					t.Fatalf("unexpected lookahead after limit: %s", arg.Cursor)
+					return nil, nil
+				},
+			})
+			if err := search(cmd, []string{"needle", "/docs"}); err != nil {
+				t.Fatalf("search: %v", err)
+			}
+			got := decodeSearchOutput(t, stdout)
+			if len(got.Results) != 1 || got.Results[0].Result.ID != "id:first" ||
+				got.Search.StopReason != test.wantStop || got.Search.ServerHasMore == nil || *got.Search.ServerHasMore != test.hasMore {
+				t.Fatalf("bounded search = %#v", got)
+			}
+		})
 	}
 }
 
 func TestSearchJSONErrorWritesNoOutput(t *testing.T) {
-	cmd, stdout := testSearchCmd()
-	setSearchOutputJSON(t, cmd)
-
-	mock := &mockFilesClient{
-		searchV2Fn: func(arg *files.SearchV2Arg) (*files.SearchV2Result, error) {
-			return nil, fmt.Errorf("search failed")
-		},
-	}
-	stubFilesClient(t, mock)
-
-	if err := search(cmd, []string{"report"}); err == nil {
-		t.Fatal("expected search error")
-	}
-	if got := stdout.String(); got != "" {
-		t.Fatalf("stdout = %q, want empty output on error", got)
+	for _, continuation := range []bool{false, true} {
+		t.Run(fmt.Sprintf("continuation=%t", continuation), func(t *testing.T) {
+			cmd, stdout := testSearchCmd()
+			setSearchOutputJSON(t, cmd)
+			cause := files.SearchContinueV2APIError{APIError: dropbox.APIError{ErrorSummary: "path/not_found/"}}
+			mock := &mockFilesClient{
+				searchV2Fn: func(arg *files.SearchV2Arg) (*files.SearchV2Result, error) {
+					if !continuation {
+						return nil, cause
+					}
+					page := files.NewSearchV2Result([]*files.SearchMatchV2{searchMatch(&files.FileMetadata{
+						Metadata: files.Metadata{Name: "report.pdf", PathDisplay: "/report.pdf"},
+						Id:       "id:report",
+					})}, true)
+					page.Cursor = "next"
+					return page, nil
+				},
+				searchContinueV2Fn: func(arg *files.SearchV2ContinueArg) (*files.SearchV2Result, error) {
+					return nil, cause
+				},
+			}
+			stubFilesClient(t, mock)
+			err := search(cmd, []string{"report"})
+			if err == nil || jsonErrorCode(err) != jsonErrorCodeNotFound || exitCodeForError(err) != exitCodeNotFound {
+				t.Fatalf("error = %v, want original not-found code and exit status", err)
+			}
+			if got := stdout.String(); got != "" {
+				t.Fatalf("stdout = %q, want no document before root error rendering", got)
+			}
+			renderCommandError(cmd, err)
+			var response struct {
+				OK    bool `json:"ok"`
+				Error struct {
+					Code    string `json:"code"`
+					Details struct {
+						Search struct {
+							StopReason    string `json:"stop_reason"`
+							ServerHasMore *bool  `json:"server_has_more"`
+						} `json:"search"`
+						PartialResults []jsonOperationResult `json:"partial_results"`
+					} `json:"details"`
+				} `json:"error"`
+			}
+			// Unmarshal rejects concatenated documents, protecting the root-renderer boundary.
+			if err := json.Unmarshal(stdout.Bytes(), &response); err != nil {
+				t.Fatalf("decode single error document: %v\n%s", err, stdout.String())
+			}
+			wantResults := 0
+			if continuation {
+				wantResults = 1
+			}
+			if response.OK || response.Error.Code != jsonErrorCodeNotFound ||
+				response.Error.Details.Search.StopReason != "error" ||
+				len(response.Error.Details.PartialResults) != wantResults {
+				t.Fatalf("partial error response = %#v", response)
+			}
+			hasMore := response.Error.Details.Search.ServerHasMore
+			if continuation && (hasMore == nil || !*hasMore) || !continuation && hasMore != nil {
+				t.Fatalf("last successful server state = %v, continuation=%t", hasMore, continuation)
+			}
+		})
 	}
 }
 
@@ -389,14 +470,8 @@ func testSearchCmd() (*cobra.Command, *bytes.Buffer) {
 	var stdout bytes.Buffer
 	cmd := &cobra.Command{Use: "search"}
 	cmd.SetOut(&stdout)
-	cmd.Flags().BoolP("content", "c", false, "")
-	cmd.Flags().Uint64("limit", 0, "")
-	cmd.Flags().String("order-by", "", "")
-	cmd.Flags().BoolP("long", "l", false, "")
-	cmd.Flags().String("sort", "", "")
-	cmd.Flags().BoolP("reverse", "r", false, "")
-	cmd.Flags().String("time", "server", "")
-	cmd.Flags().String("time-format", "", "")
+	cmd.SetErr(&bytes.Buffer{})
+	registerSearchFlags(cmd)
 	cmd.Flags().String(outputFlag, "text", "")
 	return cmd, &stdout
 }
@@ -413,10 +488,23 @@ func setSearchFlag(t *testing.T, cmd *cobra.Command, name, value string) {
 	}
 }
 
-func decodeSearchOutput(t *testing.T, out *bytes.Buffer) metadataOperationOutputForTest[searchInput] {
-	t.Helper()
+type searchOutputForTest struct {
+	Input   searchInput   `json:"input"`
+	Search  searchSummary `json:"search"`
+	Results []struct {
+		Status string             `json:"status"`
+		Kind   string             `json:"kind"`
+		Result jsonSearchMetadata `json:"result"`
+	} `json:"results"`
+}
 
-	return decodeMetadataOperationOutput[searchInput](t, out)
+func decodeSearchOutput(t *testing.T, out *bytes.Buffer) searchOutputForTest {
+	t.Helper()
+	var result searchOutputForTest
+	if err := json.Unmarshal(out.Bytes(), &result); err != nil {
+		t.Fatalf("decode search: %v\n%s", err, out.String())
+	}
+	return result
 }
 
 func searchMatch(metadata files.IsMetadata) *files.SearchMatchV2 {

@@ -152,6 +152,48 @@
     },
     "warnings": []
   },
+  "search_partial_results": {
+    "ok": false,
+    "schema_version": "1",
+    "command": "search",
+    "error": {
+      "message": "search continuation: path/not_found/.",
+      "code": "not_found",
+      "details": {
+        "api_summary": "path/not_found/.",
+        "search": {
+          "limit": 0,
+          "stop_reason": "error",
+          "server_has_more": true,
+          "local_filters_applied": true,
+          "api_matches_seen": 1,
+          "api_match_limit": 10000
+        },
+        "partial_results": [{
+          "status": "found",
+          "kind": "file",
+          "input": {},
+          "result": {
+            "type": "file",
+            "path_display": "/Reports/old.pdf",
+            "path_lower": "/reports/old.pdf",
+            "id": "id:file",
+            "rev": "015f",
+            "size": 123,
+            "server_modified": "2026-06-25T12:00:00Z",
+            "client_modified": "2026-06-25T11:00:00Z",
+            "name": "old.pdf",
+            "match_type": "file_content",
+            "highlight_spans": [
+              {"highlight_str": "old", "is_highlighted": true},
+              {"highlight_str": ".pdf", "is_highlighted": false}
+            ]
+          }
+        }]
+      }
+    },
+    "warnings": []
+  },
   "structured_output_unsupported": {
     "ok": false,
     "schema_version": "1",

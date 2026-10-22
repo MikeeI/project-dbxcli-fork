@@ -59,6 +59,11 @@
           "description": "Optional machine-readable context for stable error handling. Present only when dbxcli has reliable structured details.",
           "additionalProperties": false,
           "properties": {
+            "search": {"$ref": "#/$defs/search_summary"},
+            "partial_results": {
+              "type": "array",
+              "items": {"$ref": "#/$defs/search_result"}
+            },
             "argument": {
               "type": "string",
               "description": "Single positional argument related to the error."
@@ -163,6 +168,58 @@
     }
   },
   "$defs": {
+    "search_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["limit", "stop_reason", "server_has_more", "local_filters_applied", "api_matches_seen", "api_match_limit"],
+      "properties": {
+        "limit": {"type": "integer", "minimum": 0, "maximum": 18446744073709551615},
+        "stop_reason": {"type": "string", "enum": ["api_exhausted", "limit", "error"]},
+        "server_has_more": {"type": ["boolean", "null"]},
+        "local_filters_applied": {"type": "boolean"},
+        "api_matches_seen": {"type": "integer", "minimum": 0, "maximum": 18446744073709551615},
+        "api_match_limit": {"type": "integer", "const": 10000}
+      }
+    },
+    "search_result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "kind", "input", "result"],
+      "properties": {
+        "status": {"type": "string", "const": "found"},
+        "kind": {"type": "string", "enum": ["deleted", "file", "folder"]},
+        "input": {"type": "object", "additionalProperties": false},
+        "result": {"$ref": "#/$defs/search_metadata"}
+      }
+    },
+    "search_metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": {"type": "string", "enum": ["deleted", "file", "folder"]},
+        "name": {"type": "string"},
+        "path_display": {"type": "string"},
+        "path_lower": {"type": "string"},
+        "id": {"type": "string"},
+        "rev": {"type": "string"},
+        "size": {"type": "integer", "minimum": 0, "maximum": 18446744073709551615},
+        "server_modified": {"type": "string", "format": "date-time"},
+        "client_modified": {"type": "string", "format": "date-time"},
+        "deleted": {"type": "boolean"},
+        "match_type": {"type": "string"},
+        "highlight_spans": {"type": "array", "items": {"$ref": "#/$defs/search_highlight_span"}}
+      }
+    },
+    "search_highlight_span": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["highlight_str", "is_highlighted"],
+      "properties": {
+        "highlight_str": {"type": "string"},
+        "is_highlighted": {"type": "boolean"}
+      }
+    },
     "warning": {
       "type": "object",
       "additionalProperties": false,

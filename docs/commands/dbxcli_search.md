@@ -11,15 +11,27 @@ dbxcli search [flags] <query> [path-scope]
 ### Options
 
 ```
-  -c, --content              Search file contents in addition to filenames
-  -h, --help                 help for search
-      --limit uint           Maximum number of matches to return
-  -l, --long                 Long listing
-      --order-by string      Server-side search ordering: relevance, modified
-  -r, --reverse              Reverse sort order
-      --sort string          Sort by: name, size, time, type
-      --time string          Time field: server, client (default "server")
-      --time-format string   Time format: short (2006-01-02 15:04), rfc3339
+      --category strings                    Server-side active-file categories (comma-separated)
+  -c, --content                             Search file contents in addition to filenames
+      --exclude-name-contains stringArray   Exclude entry names containing this case-sensitive substring (repeatable; commas are literal)
+      --ext strings                         Server-side active-file extensions, e.g. pdf,docx (comma-separated; no glob patterns)
+  -h, --help                                help for search
+      --highlights                          Include title highlight spans; requires --output=json (not content snippets)
+      --limit uint                          Maximum distinct matching entries to return; applied before local sorting (0 is unlimited)
+  -l, --long                                Long listing
+      --max-size uint                       Local inclusive maximum file size in bytes (unset means no upper bound; 0 means empty files)
+      --min-size uint                       Local inclusive minimum file size in bytes (unset means no lower bound)
+      --modified-before string              Local exclusive file modification upper bound in RFC3339; uses --time
+      --modified-from string                Local inclusive file modification lower bound in RFC3339; uses --time
+      --name-contains string                Local case-sensitive substring required in the entry name
+      --name-glob string                    Local case-sensitive glob matching the entire entry name (not its path)
+      --name-regex string                   Local Go regular expression on the entry name; use (?i) for case-insensitive matching
+      --order-by string                     Server-side search ordering: relevance, modified
+  -r, --reverse                             Reverse the chosen local sort order
+      --sort string                         Sort the selected results locally by: name, size, time, type; not a global top-N selection
+      --time string                         Time field for display, local sorting and modification filters: server, client (default "server")
+      --time-format string                  Time format: short (2006-01-02 15:04), rfc3339
+      --type string                         Local entry type filter: file, folder (unset allows both)
 ```
 
 ### Options inherited from parent commands
@@ -39,7 +51,7 @@ dbxcli search [flags] <query> [path-scope]
 * Auth modes: `personal`, `team-access`
 * Dropbox scopes: `files.content.read`, `files.metadata.read`
 * Arguments: `query` (required, string), `path-scope` (optional, dropbox_path)
-* Flag metadata: `--order-by` (values: `modified`, `relevance`), `--output` (values: `json`, `text`), `--sort` (values: `name`, `size`, `time`, `type`), `--time` (values: `client`, `server`), `--time-format` (values: `rfc3339`, `short`)
+* Flag metadata: `--category` (values: `audio`, `document`, `folder`, `image`, `others`, `paper`, `pdf`, `presentation`, `spreadsheet`, `video`), `--order-by` (values: `modified`, `relevance`), `--output` (values: `json`, `text`), `--sort` (values: `name`, `size`, `time`, `type`), `--time` (values: `client`, `server`), `--time-format` (values: `rfc3339`, `short`), `--type` (values: `file`, `folder`)
 * Result statuses: `found`
 * Result kinds: `deleted`, `file`, `folder`
 * JSON contract: `docs/json-schema/v1/commands.json#/commands/search`

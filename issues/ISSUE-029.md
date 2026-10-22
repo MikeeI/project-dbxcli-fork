@@ -26,7 +26,7 @@ Die tatsächlich ersparte Zeit und Nutzungshäufigkeit sind nicht erhoben.
 
 - [S] `cmd/completion.go:42-94` erzeugt die bestehenden Shellskripte.
 - [S] `cmd/help_manifest.go:116,185,202` besitzt die befehlsspezifischen `--if-exists`-Enums.
-- [S] Im geprüften `cmd/` fehlen Registrierungen über `RegisterFlagCompletionFunc`.
+- [S] Im referenzierten Ausgangsstand fehlen Registrierungen über `RegisterFlagCompletionFunc`.
 - [S] `cmd/root.go:121-128` nimmt Completion von der Authentifizierung aus.
 
 ## Prior-Art
@@ -55,6 +55,10 @@ Quellprüfung abgeschlossen; kein Completion-Smoke ausgeführt.
 Vorgeschlagen: `dbxcli __complete put --if-exists a` muss `autorename` ohne Dateivorschläge liefern.
 Danach befehlsspezifische Werte bei `cp` und `mv` prüfen; dort darf `overwrite` nicht erscheinen.
 Test decision: none; nur Tracking, keine Source- oder Teständerung.
+
+Privater Search-Teilstand [O]: Die neuen Kategorie- und Typflags liefern native Cobra-Completion ohne Dateivorschläge.
+Die tatsächlichen `__complete search --category doc`- und `__complete search --type f`-Aufrufe sind geprüft.
+Dies behebt weder die bisherigen Konfliktstrategie-Enums noch die übrigen alten Search-Completions.
 
 ## Publication-Blockers
 

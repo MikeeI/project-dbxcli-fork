@@ -43,6 +43,13 @@ assert_json "$ls_help" '.ok == true and .results[0].result.input_schema.properti
 search_help="$($dbxcli_bin search --help --output=json)"
 assert_json "$search_help" '.ok == true and .results[0].result.input_schema.properties.content["x-cli-name"] == "content"'
 assert_json "$search_help" '.results[0].result.input_schema.properties.path_scope["x-cli-name"] == "path-scope"'
+assert_json "$search_help" '
+  .results[0].result.input_schema.properties as $p |
+  $p.category.type == "array" and $p.category.items.type == "string" and
+  $p.ext.type == "array" and $p.exclude_name_contains.type == "array" and
+  $p.modified_from.format == "date-time" and
+  $p.max_size.type == "integer" and ($p.max_size | has("default") | not)
+'
 
 login_help="$($dbxcli_bin login --help --output=json)"
 assert_json "$login_help" '.ok == true and .results[0].result.supports_structured_output == false'
@@ -54,4 +61,4 @@ set -e
 [[ $exit_code -eq 7 ]] || { echo "expected unknown flag to exit 7, got $exit_code" >&2; exit 1; }
 assert_json "$invalid" '.ok == false and .error.code == "unknown_flag"'
 
-echo "dbxcli skill contract checks passed (13 assertions)"
+echo "dbxcli skill contract checks passed (14 assertions)"

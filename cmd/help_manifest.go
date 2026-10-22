@@ -29,12 +29,13 @@ type jsonCommandManifestMetadata struct {
 }
 
 type jsonCommandFlagMetadata struct {
-	EnumValues []string
-	Conflicts  []string
-	Required   bool
-	Sensitive  bool
-	MayPrompt  bool
-	ValueKind  string
+	EnumValues       []string
+	Conflicts        []string
+	Required         bool
+	Sensitive        bool
+	MayPrompt        bool
+	ValueKind        string
+	OmitInputDefault bool
 }
 
 type jsonCommandContractMetadata struct {
@@ -241,10 +242,25 @@ var commandManifestRegistry = map[string]jsonCommandManifestMetadata{
 			commandArg("query", true, false, "string", "Search query"),
 			commandArg("path-scope", false, false, "dropbox_path", "Dropbox path scope"),
 		},
-		Examples: []jsonCommandExample{{Description: "Search by filename", Command: "dbxcli search report /Reports"}},
+		Examples: []jsonCommandExample{
+			{Description: "Search by filename", Command: "dbxcli search report /Reports"},
+			{Description: "Filter server results and preserve search status", Command: "dbxcli search report /Reports --ext pdf,docx --exclude-name-contains Draft --limit 20 --output=json"},
+		},
 		Flags: mergeCommandFlagMetadata(commonListFlagMetadata, map[string]jsonCommandFlagMetadata{
-			"content":  {ValueKind: "boolean"},
-			"order-by": {EnumValues: []string{"relevance", "modified"}, ValueKind: "enum"},
+			"content":                     {ValueKind: "boolean"},
+			"order-by":                    {EnumValues: []string{"relevance", "modified"}, ValueKind: "enum"},
+			searchFlagCategory:            {EnumValues: searchCategories, ValueKind: "enum"},
+			searchFlagExt:                 {ValueKind: "string"},
+			searchFlagHighlights:          {ValueKind: "boolean"},
+			searchFlagNameGlob:            {ValueKind: "string"},
+			searchFlagNameRegex:           {ValueKind: "string"},
+			searchFlagNameContains:        {ValueKind: "string"},
+			searchFlagExcludeNameContains: {ValueKind: "string"},
+			searchFlagMinSize:             {ValueKind: "bytes", OmitInputDefault: true},
+			searchFlagMaxSize:             {ValueKind: "bytes", OmitInputDefault: true},
+			searchFlagModifiedFrom:        {ValueKind: "rfc3339_timestamp"},
+			searchFlagModifiedBefore:      {ValueKind: "rfc3339_timestamp"},
+			searchFlagType:                {EnumValues: searchEntryTypes, ValueKind: "enum"},
 		}),
 		DropboxScopes: []string{"files.metadata.read", "files.content.read"},
 		Known:         true,

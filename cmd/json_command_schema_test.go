@@ -25,6 +25,7 @@ import (
 	"testing"
 
 	schemagen "github.com/dropbox/dbxcli/v3/internal/jsonschema"
+	"github.com/dropbox/dropbox-sdk-go-unofficial/v6/dropbox"
 	"github.com/dropbox/dropbox-sdk-go-unofficial/v6/dropbox/files"
 	"github.com/dropbox/dropbox-sdk-go-unofficial/v6/dropbox/sharing"
 	"github.com/santhosh-tekuri/jsonschema/v6"
@@ -195,6 +196,34 @@ func TestLiveJSONSuccessOutputsValidateAgainstPublicCommandSuccessSchema(t *test
 		assertJSONBytesValidateAgainstSchema(t, schema, stdout.Bytes())
 	})
 
+	t.Run("search and older v1 responses", func(t *testing.T) {
+		cmd, stdout := testSearchCmd()
+		setSearchOutputJSON(t, cmd)
+		setSearchFlag(t, cmd, searchFlagHighlights, "true")
+		setSearchFlag(t, cmd, searchFlagMaxSize, "0")
+		match := searchMatch(&files.FileMetadata{
+			Metadata: files.Metadata{Name: "empty.pdf", PathDisplay: "/empty.pdf"},
+			Id:       "id:empty",
+		})
+		match.MatchType = &files.SearchMatchTypeV2{Tagged: dropbox.Tagged{Tag: files.SearchMatchTypeV2Filename}}
+		match.HighlightSpans = []*files.HighlightSpan{files.NewHighlightSpan("empty", true), files.NewHighlightSpan(".pdf", false)}
+		stubFilesClient(t, &mockFilesClient{
+			searchV2Fn: func(arg *files.SearchV2Arg) (*files.SearchV2Result, error) {
+				return files.NewSearchV2Result([]*files.SearchMatchV2{match}, false), nil
+			},
+		})
+		if err := search(cmd, []string{"empty"}); err != nil {
+			t.Fatalf("search: %v", err)
+		}
+		assertJSONBytesValidateAgainstSchema(t, schema, stdout.Bytes())
+		value := decodeJSONValueForSchema(t, stdout.Bytes()).(map[string]any)
+		// Old producers lack the summary; new v1 validators must still accept them.
+		delete(value, "search")
+		if err := schema.Validate(value); err != nil {
+			t.Fatalf("older response without search: %v", err)
+		}
+	})
+
 	t.Run("put", func(t *testing.T) {
 		tmpFile := writeJSONSchemaTempFile(t, "schema-live-put.txt", "data")
 		stubFilesClient(t, &mockFilesClient{
@@ -291,6 +320,36 @@ func TestLiveJSONErrorOutputsValidateAgainstPublicErrorSchema(t *testing.T) {
 		}
 		if len(got.Warnings) != 1 || got.Warnings[0].Code != jsonWarningCodeDeprecatedCommand {
 			t.Fatalf("warnings = %+v, want deprecated command warning", got.Warnings)
+		}
+	})
+
+	t.Run("search continuation partial results", func(t *testing.T) {
+		cmd, stdout := testSearchCmd()
+		setSearchOutputJSON(t, cmd)
+		match := searchMatch(&files.FileMetadata{
+			Metadata: files.Metadata{Name: "report.pdf", PathDisplay: "/report.pdf"},
+			Id:       "id:report",
+		})
+		match.MatchType = &files.SearchMatchTypeV2{Tagged: dropbox.Tagged{Tag: files.SearchMatchTypeV2FileContent}}
+		match.HighlightSpans = []*files.HighlightSpan{files.NewHighlightSpan("report", true)}
+		stubFilesClient(t, &mockFilesClient{
+			searchV2Fn: func(arg *files.SearchV2Arg) (*files.SearchV2Result, error) {
+				page := files.NewSearchV2Result([]*files.SearchMatchV2{match}, true)
+				page.Cursor = "next"
+				return page, nil
+			},
+			searchContinueV2Fn: func(arg *files.SearchV2ContinueArg) (*files.SearchV2Result, error) {
+				return nil, files.SearchContinueV2APIError{APIError: dropbox.APIError{ErrorSummary: "path/not_found/."}}
+			},
+		})
+		err := search(cmd, []string{"report"})
+		if err == nil {
+			t.Fatal("expected continuation error")
+		}
+		renderCommandError(cmd, err)
+		assertJSONBytesValidateAgainstSchema(t, schema, stdout.Bytes())
+		if stderr := cmd.ErrOrStderr().(*bytes.Buffer).String(); stderr != "" {
+			t.Fatalf("JSON stderr: %q", stderr)
 		}
 	})
 }

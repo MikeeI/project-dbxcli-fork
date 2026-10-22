@@ -11,6 +11,7 @@ import (
 	"strings"
 	"testing"
 
+	schemagen "github.com/dropbox/dbxcli/v3/internal/jsonschema"
 	"github.com/dropbox/dbxcli/v3/internal/output"
 	"github.com/dropbox/dropbox-sdk-go-unofficial/v6/dropbox"
 	dropboxauth "github.com/dropbox/dropbox-sdk-go-unofficial/v6/dropbox/auth"
@@ -200,7 +201,7 @@ func TestPublicJSONSchemaFiles(t *testing.T) {
 			file:       "../docs/json-schema/v1/success.schema.json",
 			ok:         true,
 			required:   []string{"ok", "schema_version", "command", "input", "results", "warnings"},
-			properties: []string{"ok", "schema_version", "command", "input", "results", "warnings"},
+			properties: []string{"ok", "schema_version", "command", "input", "results", "warnings", "search"},
 		},
 		{
 			file:       "../docs/json-schema/v1/error.schema.json",
@@ -360,6 +361,7 @@ type jsonGoldenCommandSchema struct {
 	Statuses      []string `json:"statuses"`
 	Kinds         []string `json:"kinds"`
 	Warnings      []string `json:"warnings"`
+	SearchSummary *string  `json:"search_summary,omitempty"`
 }
 
 type publicJSONSchema struct {
@@ -694,10 +696,9 @@ func assertGoldenErrorOutputShape(t *testing.T, name string, fixture json.RawMes
 	}
 }
 
-func jsonGoldenSuccessOutputExamples() map[string]jsonOperationOutput {
+func jsonGoldenSuccessOutputExamples() map[string]any {
 	file := sampleJSONFileMetadata("/Reports/old.pdf")
 	copyFile := sampleJSONFileMetadata("/Reports/copy.pdf")
-	folder := sampleJSONFolderMetadata("/Reports")
 	sharedLink := sampleShareLinkJSONMetadata()
 	teamMember := sampleTeamMemberJSON()
 
@@ -751,8 +752,14 @@ func jsonGoldenSuccessOutputExamples() map[string]jsonOperationOutput {
 		"rm": newJSONOperationOutput(nil, []jsonOperationResult{
 			newJSONOperationResult(removeJSONStatusDeleted, file.Type, removeInput{Path: "/Reports/old.pdf", Permanent: false, Recursive: false, Force: false}, file),
 		}, nil),
-		"search": newJSONOperationOutput(searchInput{Query: "report", Path: "/Reports", Long: true, Sort: "type", Reverse: false, Time: "server", TimeFormat: "2006-01-02"}, []jsonOperationResult{
-			newJSONOperationResult(searchJSONStatusFound, folder.Type, nil, folder),
+		"search": newJSONOperationOutput(searchInput{
+			Query: "report", Path: "/Reports", Long: true, Sort: "type", Time: "server", TimeFormat: "2006-01-02",
+			MinSize: new(uint64(0)), Highlights: true,
+		}, []jsonOperationResult{
+			newJSONOperationResult(searchJSONStatusFound, file.Type, nil, jsonSearchMetadata{
+				jsonMetadata: file, Name: "old.pdf", MatchType: files.SearchMatchTypeV2FileContent,
+				HighlightSpans: []*files.HighlightSpan{files.NewHighlightSpan("old", true), files.NewHighlightSpan(".pdf", false)},
+			}),
 		}, nil),
 		"share list folder": newJSONOperationOutput(shareFolderListInput{}, []jsonOperationResult{
 			newJSONOperationResult(shareFolderJSONStatusListed, shareFolderJSONKindFolder, nil, sampleShareFolderJSONMetadata()),
@@ -805,20 +812,36 @@ func jsonGoldenSuccessOutputExamples() map[string]jsonOperationOutput {
 			newJSONOperationResult(versionJSONStatusReported, versionKindVersion, versionInput{}, versionOutput{Version: "1.2.3", SDKVersion: "sdk-version", SpecVersion: "spec-version"}),
 		}, nil),
 	}
+	outputs := make(map[string]any, len(examples))
 	for command, example := range examples {
 		example.OK = true
 		example.SchemaVersion = jsonSchemaVersion
 		example.Command = command
-		examples[command] = example
+		outputs[command] = example
 	}
-	return examples
+	outputs["search"] = jsonSearchOutput{
+		jsonOperationOutput: outputs["search"].(jsonOperationOutput),
+		Search: searchSummary{
+			StopReason: searchStopAPIExhausted, ServerHasMore: new(false), LocalFiltersApplied: true,
+			APIMatchesSeen: 1, APIMatchLimit: schemagen.SearchAPIMatchLimit,
+		},
+	}
+	return outputs
 }
 
 func jsonGoldenErrorOutputExamples() map[string]jsonErrorResponse {
 	rateLimit := dropboxauth.NewRateLimitError(nil)
 	rateLimit.RetryAfter = 12
 
+	search := jsonGoldenSuccessOutputExamples()["search"].(jsonSearchOutput)
+	summary := search.Search
+	summary.StopReason = searchStopError
+	summary.ServerHasMore = new(true)
 	examples := map[string]jsonErrorResponse{
+		"search_partial_results": newJSONErrorResponse(jsonErrorExampleCommand("search"), withJSONErrorDetails(
+			fmt.Errorf("search continuation: %w", files.SearchContinueV2APIError{APIError: dropbox.APIError{ErrorSummary: "path/not_found/."}}),
+			map[string]any{searchSummaryDetailKey: summary, searchPartialResultsDetailKey: search.Results},
+		)),
 		"auth_required": newJSONErrorResponse(jsonErrorExampleCommand("account"), missingAccessTokenError(tokenPersonal)),
 		"as_member_api_error": newJSONErrorResponse(
 			jsonErrorExampleCommandWithAsMember("ls", "dbmid:member"),
@@ -1061,6 +1084,9 @@ func jsonContractDefinitions() map[string][]string {
 		"restore_input":                  jsonFieldNames[restoreInput](),
 		"revs_input":                     jsonFieldNames[revsInput](),
 		"search_input":                   jsonFieldNames[searchInput](),
+		"search_metadata":                append(jsonFieldNames[jsonMetadata](), jsonFieldNames[jsonSearchMetadata]()...),
+		"search_summary":                 jsonFieldNames[searchSummary](),
+		"search_highlight_span":          jsonFieldNames[files.HighlightSpan](),
 		"share_folder":                   jsonFieldNames[shareFolderJSONMetadata](),
 		"share_link_create_input":        jsonFieldNames[shareLinkCreateInput](),
 		"share_link_create_result_input": jsonFieldNames[shareLinkCreateResultInput](),
@@ -1087,7 +1113,7 @@ func jsonContractDefinitions() map[string][]string {
 }
 
 func jsonCommandSchemas() map[string]jsonGoldenCommandSchema {
-	return map[string]jsonGoldenCommandSchema{
+	schemas := map[string]jsonGoldenCommandSchema{
 		"account":           operationSchema("account_input", schemaRef("account_input"), "account", []string{accountJSONStatusFound}, []string{accountKindAccount}, nil),
 		"cp":                operationSchema("empty", schemaRef("relocation_input"), "metadata", []string{relocationJSONStatusAutorenamed, relocationJSONStatusCopied, relocationJSONStatusSkipped, jsonStatusPlanned}, metadataKinds(), nil),
 		"du":                operationSchema("empty", schemaRef("empty"), "du_output", []string{duJSONStatusReported}, []string{duKindSpaceUsage}, nil),
@@ -1101,7 +1127,7 @@ func jsonCommandSchemas() map[string]jsonGoldenCommandSchema {
 		"restore":           operationSchema("restore_input", schemaRef("restore_input"), "metadata", []string{restoreStatusRestored, jsonStatusPlanned}, []string{restoreKindFile}, nil),
 		"revs":              operationSchema("revs_input", schemaRef("empty"), "metadata", []string{revsJSONStatusRevision}, []string{"file"}, nil),
 		"rm":                operationSchema("empty", schemaRef("remove_input"), "metadata", []string{removeJSONStatusDeleted, removeJSONStatusPermanentlyDeleted, jsonStatusPlanned}, metadataKinds(), nil),
-		"search":            operationSchema("search_input", schemaRef("empty"), "metadata", []string{searchJSONStatusFound}, metadataKinds(), nil),
+		"search":            operationSchema("search_input", schemaRef("empty"), "search_metadata", []string{searchJSONStatusFound}, metadataKinds(), nil),
 		"share list folder": operationSchema("empty", schemaRef("empty"), "share_folder", []string{shareFolderJSONStatusListed}, []string{shareFolderJSONKindFolder}, nil),
 		"share list link":   operationSchema("share_link_list_input", schemaRef("empty"), "share_link_metadata", []string{shareLinkJSONStatusListed}, shareLinkKinds(), []string{jsonWarningCodeDeprecatedCommand}),
 		"share-link create": operationSchema("share_link_create_input", schemaRef("share_link_create_result_input"), "share_link_metadata", []string{shareLinkJSONStatusCreated, shareLinkJSONStatusExisting, jsonStatusPlanned}, shareLinkKinds(), nil),
@@ -1124,6 +1150,10 @@ func jsonCommandSchemas() map[string]jsonGoldenCommandSchema {
 		"team remove-member": operationSchema("team_member_remove_input", schemaRef("team_member_remove_input"), "team_member_mutation", []string{teamJSONStatusCompleted, teamJSONStatusRemoved, teamJSONStatusStarted}, []string{teamJSONKindTeamMember}, nil),
 		"version":            operationSchema("empty", schemaRef("empty"), "version", []string{versionJSONStatusReported}, []string{versionKindVersion}, nil),
 	}
+	search := schemas["search"]
+	search.SearchSummary = schemaRef("search_summary")
+	schemas["search"] = search
+	return schemas
 }
 
 func operationSchema(input string, resultInput *string, result string, statuses, kinds, warnings []string) jsonGoldenCommandSchema {
@@ -1224,6 +1254,9 @@ func assertGoldenCommandSchemaReferences(t *testing.T, command string, schema js
 	refs := []string{schema.TopLevel, schema.ResultWrapper, schema.Input, schema.Result}
 	if schema.ResultInput != nil {
 		refs = append(refs, *schema.ResultInput)
+	}
+	if schema.SearchSummary != nil {
+		refs = append(refs, *schema.SearchSummary)
 	}
 	for _, ref := range refs {
 		if _, ok := definitions[ref]; !ok {

@@ -13,7 +13,7 @@ Source: `upstream/master@8fc3850baecaaa751e85b1673f619d29b68f3b76`
 
 ## Root-Cause
 
-Root-Cause [S]: `sortEntries` negiert bei Rückwärtssortierung das Ergebnis von `compareLess`.
+Root-Cause [S]: Im referenzierten Ausgangsstand negiert `sortEntries` bei Reverse das Ergebnis von `compareLess`.
 Bei gleichen Schlüsseln werden dadurch beide Vergleichsrichtungen wahr.
 Der Komparator verletzt die strikte schwache Ordnung des verwendeten `sort.SliceStable`.
 Gesprächsreferenz: `CW2`; der anschließende Review bestätigt Ursache und lokale Korrektur.
@@ -30,6 +30,8 @@ Stabilität bezieht sich auf eine gegebene Eingangsfolge, nicht auf unterschiedl
 Eine reale Nutzungshäufigkeit oder Produktionsstörung wurde nicht erhoben.
 
 ## Evidence
+
+Die folgenden historischen Quellanker beziehen sich auf den genannten Upstream-Ausgangsstand.
 
 - [S] `cmd/format.go:58-64` übergibt bei `reverse` den negierten Vergleich an `sort.SliceStable`.
 - [S] `cmd/format.go:67-79` liefert für gleiche Namen, Größen, Zeiten oder Typklassen in beiden Richtungen `false`.
@@ -48,10 +50,10 @@ Contribution fit: Eine lokale Korrektur ist abgegrenzt; bestehende Arbeiten und 
 
 ## Proposed-Change
 
-Im Reverse-Zweig von `sortEntries` die Operanden des bestehenden Vergleichs vertauschen, statt ihn zu negieren.
-Den stabilen Sortierer und die normale Vergleichsrichtung beibehalten.
-Keinen sekundären Namensvergleich und keine neue Sortieroption einführen.
-Die Änderung ist ein Vorschlag und nicht zur Implementierung autorisiert.
+Privat umgesetzt: Reverse vertauscht zentral in `compareLess` die Operanden, statt `less` in `sortEntries` zu negieren.
+Der stabile Sortierer und die normale Vergleichsrichtung bleiben erhalten.
+Es gibt keinen sekundären Namensvergleich und keine neue Sortieroption.
+Die direkte vollständige private Implementierungsfreigabe von `GOAL.md` umfasst diesen Fix.
 
 ## Scope-and-Constraints
 
@@ -66,28 +68,24 @@ Die Änderung ist ein Vorschlag und nicht zur Implementierung autorisiert.
 
 ## Verification
 
-Abgeschlossen [O]: Der Review hat die Gleichstands- und Ordnungsanforderungen der installierten Go-Bibliothek geprüft.
-Nicht ausgeführt: Dynamische Fehlerreproduktion, Implementierung, Tests und Dropbox-Abfragen.
-Nach autorisierter Implementierung ist folgende Verifikation erforderlich:
+- [O] Vor dem Fix scheitert `TestSortEntriesReverse` mit `[/second.txt /first.txt /folder]` statt stabiler Dateifolge.
+- [O] Die Reproduktion verwendet `go test ./cmd -run '^(TestSortEntriesReverse|TestSearchJSONErrorWritesNoOutput)$'`.
+- [O] Nach dem Fix besteht `go test ./cmd -run '^(TestSearch|TestRenderSearch|TestSortEntriesReverse)'`.
+- [O] `go test ./...`, `go vet ./...` und `go build ./...` bestehen.
+- [O] Commit `d36e7f6` enthält ausschließlich Komparatorkorrektur und vorhandenen Regressionstest und ist gepusht.
 
-- Den bestehenden `TestSortEntriesReverse` auf zwei typgleiche Dateien und einen Ordner ausrichten.
-- Vor der Korrektur den Verlust der Dateireihenfolge unter Rückwärtssortierung nach Typ reproduzieren.
-- Nach der Korrektur müssen die Dateien vor dem Ordner stehen und ihre Eingangsreihenfolge behalten.
-- Den fokussierten Test mit `go test ./cmd -run '^TestSortEntriesReverse$'` ausführen.
-
-Test decision: update — `TestSortEntriesReverse` schützt die korrigierte Gleichstandsbehandlung.
-Keine neue Testdatei ist vorgesehen.
-Die übrigen vorgeschriebenen Source-Submission-Gates bleiben vor einer späteren Einreichung erforderlich.
+Test decision: update — `TestSortEntriesReverse` schützt gleiche Typ-Schlüssel ohne neue Testfunktion.
+Die Nachweise benötigen weder Dropbox-Abfragen noch persistierte Zustandsänderungen.
 
 ## Publication-Blockers
 
-- Eine dynamische Offline-Reproduktion des Gleichstandsfehlers fehlt.
+- Die private Korrektur und ihre Reproduktion sind abgeschlossen; eine Upstream-Veröffentlichung ist nicht beauftragt.
 - Prior Art und aktuelle Upstream-Beitragsvorgaben sind vor einer Veröffentlichung zu prüfen.
 - `Authorized-Work` und `Publication-Target` sind vom Nutzer noch nicht ausgewählt.
 - Ein exakter Veröffentlichungsentwurf und dessen Freigabe liegen nicht vor.
 
 ## Next-Action
 
-Summary: Gleichstandsfehler offline reproduzieren
-Action: Den bestehenden Reverse-Komparator mit zwei typgleichen Dateien und einem Ordner ohne Produktivänderung ausführen.
-Done-When: Eingabe, tatsächliche Reihenfolge und erwartete stabile Reihenfolge sind reproduzierbar dokumentiert.
+Summary: Private Korrektur im Ledger abschließen
+Action: Den belegten privaten Fix ohne behauptete Upstream-Lösung als privaten Abschluss archivieren.
+Done-When: Die Akte enthält den Commitnachweis und der Index projiziert den begründeten privaten Abschluss.

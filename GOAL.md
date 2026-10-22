@@ -6,14 +6,47 @@ Der Nutzer entwickelt diesen persönlichen Fork, nicht Upstream `dropbox/dbxcli`
 Ziel ist eine bessere Suche für LLM-Agenten; menschliche Nutzbarkeit bleibt erforderlich.
 Agenten dürfen begrenzte oder fehlgeschlagene Suchläufe nicht als vollständige Ergebnislisten interpretieren.
 
-Dieses Dokument enthält den vollständigen adaptierten Entwurf, keine bereits implementierten Features.
-Die Freigabe, diesen Plan zu dokumentieren, autorisiert weder Quellimplementierung noch Upstream-Veröffentlichung.
-Jedes Ziel benötigt weiterhin einen Finding-Bezug und eine ausdrückliche Anweisung zur Umsetzung seines Scopes.
+Dieses Dokument enthält den vollständigen Plan und den jeweils belegten Implementierungsstand.
+Die anschließende ausdrückliche Nutzeranweisung autorisiert die vollständige private Umsetzung dieses Scopes auf `personal`.
+Sie autorisiert weder Upstream-Veröffentlichung noch globale Installation oder Live-Kontoabfragen.
 
 Die Entwicklung erfolgt auf `personal`, ohne verpflichtende Upstream-Branches oder Pull-Request-Entwürfe.
 Upstream-Integration ist kein Lieferziel, unabhängig von möglichem Interesse oder möglicher Ablehnung.
 Externe Beiträge benötigen weiterhin die Freigabe des genauen aktuellen Entwurfs und Ziels.
 Bestehende Strukturen und Konventionen bleiben erhalten, um spätere Upstream-Übernahmen nicht unnötig zu verteuern.
+
+## Implementierungsstand und Prüfnachweis
+
+Alle fünf Ziele sind im privaten Code umgesetzt und an den vorhandenen Command-/Client-Grenzen geprüft.
+Die bestehende Struktur bleibt erhalten; `cmd/search-filters.go` ist die einzige neue Go-Quelldatei.
+Die folgenden Abschnitte bleiben die vollständige Spezifikation dieser Umsetzung.
+
+1. Suchzustand unterscheidet API-Ende, lokales Limit und Fehler und erhält akzeptierte Teilergebnisse.
+2. `--category` und `--ext` werden als native Serverfilter übertragen.
+3. Vollständige Matches erhalten Name, offenen Matchtyp und optionale JSON-only-Titelspans.
+4. Nur lokal akzeptierte Datei-/Ordner-IDs werden dedupliziert und gegen das Ergebnislimit gezählt.
+5. Namens-, Größen-, Zeit- und Typfilter wirken vor Deduplizierung und Auswahl mit präsenzkorrekter Discovery.
+
+Der gemeinsame Reverse-Gleichstandsfix ist separat in `d36e7f6` auf `origin/personal` enthalten.
+`ISSUE-036` bis `ISSUE-039` dokumentieren Serverfilter, Matchinformationen, Deduplizierung und lokale Filter.
+`ISSUE-003`, `ISSUE-028`, `ISSUE-029`, `ISSUE-031` und `ISSUE-034` grenzen erledigte und verbleibende Scopes ab.
+Der globale Allocator steht nach dieser Vergabe auf `ISSUE-040`; die Ledger-Validierung besteht.
+
+Beobachtete Verifikation am 2026-10-22:
+
+- Vor dem Fix scheitern der bestehende Reverse-Test und die Search-Fehlerprüfung wie erwartet.
+- Nach der Umsetzung bestehen die gezielten Search-, Sortier-, Discovery-, Golden- und Live-Schemavertragsprüfungen.
+- `go test ./...`, `go vet ./...` und `go build ./...` bestehen.
+- Beide vorhandenen Generatoren wurden ausgeführt; nur die Search-Befehlsreferenz benötigt eine Command-Doc-Änderung.
+- Kanonische Skills wurden synchronisiert und paketiert; die vorhandene Plugin-Prüfung besteht mit 29 Checks.
+- Die tatsächlich gebaute CLI besteht die Skill-Vertragsprüfung mit 14 Assertions.
+- Texthilfe, JSON-Discovery und native Kategorie-/Typ-Completion sind ohne Authentifizierung geprüft.
+- Die vorhandenen Handlerprüfungen bestätigen stderr-Diagnose, Einzeldokumentfehler und erhaltene SDK-Exitklassen.
+
+Es wurden keine neuen Testfunktionen, Testdateien, Abhängigkeiten, Packages oder Endpoints eingeführt.
+Es wurden weder Live-Kontoabfragen noch globale Installation, Transfers oder Upstream-Veröffentlichung ausgeführt.
+Die kombinierte Serverfilterwirkung bleibt deshalb ausdrücklich nicht live bestätigt.
+Die private Abschlussrevision und die abschließende Archivprojektion werden nach dem Implementierungscommit erfasst.
 
 ## Grenzen und Nichtziele
 
@@ -31,14 +64,14 @@ Bestehende Strukturen und Konventionen bleiben erhalten, um spätere Upstream-Ü
 - Versprich keine Regex- oder Boolean-Suche über Dokumentinhalte.
 - Füge weder Property Search noch Android-interne Suchendpoints hinzu.
 
-Die vorgeschlagenen neuen Flags und JSON-Felder sind Planungsentscheidungen, noch kein ausgelieferter Vertrag.
+Die beschriebenen neuen Flags und JSON-Felder werden gemeinsam mit ihren Schemas und Verbraucherhinweisen implementiert.
 Lokale Filter beziehen sich ausschließlich auf die Treffer der angegebenen Dropbox-Query.
 Sie ersetzen keine vollständige kontoweite Inventarisierung nach Name, Größe oder Datum.
 
 ## Belegter Ausgangsstand
 
-Die Untersuchung beschreibt den Bestand vor der Umsetzung.
-Es wurden keine neuen Features ausgeführt, keine Live-Kontoabfragen gemacht und keine neuen Tests ausgeführt.
+Die folgenden Quellanker dokumentieren den historischen Bestand vor dieser Umsetzung.
+Der aktuelle Prüfnachweis wird getrennt erfasst; Live-Kontoabfragen wurden nicht durchgeführt.
 
 - `go.mod:6` pinnt das benötigte SDK bereits auf `v6.6.2`.
 - `cmd/search.go:79-93` sammelt Metadaten, begrenzt sie und sortiert erst danach lokal.
@@ -82,6 +115,7 @@ cmd/
 ├── search-filters.go                              N
 ├── format.go                                      M
 ├── help_manifest.go                               M
+├── help_json.go                                   M
 ├── help_input_schema.go                           M
 ├── search_test.go                                 M
 ├── format_test.go                                 M
@@ -120,6 +154,9 @@ plugin/
     ├── SKILL.md                                   S
     └── references/
         └── tool-integration.md                    S
+
+scripts/
+└── test-skill-contract.sh                         M
 ```
 
 `main.go`, `cmd/root.go`, `cmd/files_client.go` und `internal/output/` bleiben unverändert.
@@ -197,7 +234,7 @@ Neue Flag-Defaults werden einmal bei ihrer Registrierung festgelegt.
 
 Eine leere oder vollständig herausgefilterte Seite beendet den Lauf bei `HasMore=true` nicht.
 Es gibt keine zusätzliche Lookahead-Abfrage nur zur Bestätigung einer Kürzung.
-Die API begrenzt die abrufbare Suchmenge; der CLI erfindet keinen separaten Scan-Cutoff oder Gesamtzähler.
+Die API begrenzt die abrufbare Suchmenge; die CLI erfindet keinen separaten Scan-Cutoff oder Gesamtzähler.
 
 Filterung vor der Deduplizierung verhindert, dass ein früher nicht passender Datensatz eine spätere ID-Darstellung sperrt.
 Die ID-Map erfasst die akzeptierten Treffer, nicht sämtliche lokal abgelehnten Datensätze.
@@ -221,7 +258,7 @@ Die Stopgründe haben folgende Bedeutung:
 
 `server_has_more` bezeichnet ausschließlich den Wert der letzten erfolgreichen API-Antwort.
 Vor der ersten erfolgreichen Antwort ist dieser Wert `null`, nicht ein erfundenes `false`.
-Der Name präzisiert das ursprünglich vorgeschlagene neue Feld `has_more`; dieses ist noch nicht ausgeliefert.
+Der Name präzisiert das frühere Planfeld `has_more`, das nicht als öffentlicher Laufzeitvertrag eingeführt wurde.
 `stop_reason` bleibt das maßgebliche CLI-Abschlusssignal.
 
 Verwende weder `complete` noch ein selbst erfundenes `cap_reached` als verlässliche Serveraussage.
@@ -395,7 +432,7 @@ Die neue Search-Match-Sortierung verwendet denselben Komparator.
 Behalte stabile Sortierung ohne neue sekundäre Namensschlüssel bei.
 Die Korrektur betrifft auch vorhandene Listing-Aufrufer und benötigt den bestehenden Reverse-Regressionsnachweis.
 
-### `cmd/help_manifest.go` und `cmd/help_input_schema.go`
+### `cmd/help_manifest.go`, `cmd/help_json.go` und `cmd/help_input_schema.go`
 
 Ergänze die neuen Flag-Metadaten, Enums, Wertarten und passende Beispiele.
 Erkenne StringSlice und StringArray als Arrays mit String-Items.
@@ -412,6 +449,7 @@ Erfinde dafür weder `-1` noch eine künstliche maximale Dateigröße.
 Auch ein String `"[]"` ist kein gültiger Array-Default im Eingabeschema.
 Die neuen optionalen Listenfilter benötigen keinen publizierten Schema-Default.
 Andere bestehende Flags behalten ihre bisherige Default-Bedeutung.
+Die interne Default-Präsenzregel wird durch `jsonCommandFlag` transportiert, ohne das öffentliche Manifest zu erweitern.
 
 ### Schema-Katalog und Generator
 
@@ -468,7 +506,7 @@ Veröffentliche Schemas und Verbraucherhinweise zusammen mit der betreffenden Fo
 
 ## Risiken und verbleibende Unsicherheiten
 
-- Die API kann Treffer auslassen und Änderungen verzögert indizieren; der CLI kann keinen vollständigen Suchraum beweisen.
+- Die API kann Treffer auslassen und Änderungen verzögert indizieren; die CLI kann keinen vollständigen Suchraum beweisen.
 - Ohne Total-Count oder Cap-Signal bleibt die Ursache eines API-Endes an der Obergrenze teilweise unbekannt.
 - Lokale Filter benötigen möglicherweise viele Seiten; es gibt keine Zusage gleicher Latenz bei gleichem Ergebnislimit.
 - Doppelte IDs können unterschiedliche Metadaten enthalten; die erste passende Darstellung ist keine Snapshot-Garantie.
@@ -537,7 +575,7 @@ Race-Prüfungen sind zusätzlich erforderlich, falls die tatsächliche Umsetzung
 Die bestehenden Plugin- und Skill-Vertragschecks werden nach betroffenen Skill-Änderungen ausgeführt.
 Ausgeführte Checks werden als Beobachtung dokumentiert; vorgeschlagene Checks gelten nicht als bestanden.
 
-## Umsetzungseinheiten
+## Umsetzungseinheiten des Plans
 
 ### Einheit 1: Verlustfreie interne Datenerhaltung
 
@@ -574,9 +612,10 @@ Schemas, Skill-Hinweise und Vertragsprüfungen sind daher kein nachgelagerter Ab
 `ISSUE-003` besitzt den Reverse-Gleichstandsfehler.
 `ISSUE-029` betrifft die bestehende Lücke bei Enum-Completions.
 
-Prüfe diese Akten vor einer Umsetzung auf denselben Root Cause und ergänze keine Dubletten.
-Neue Finding-IDs werden erst bei entsprechender Tracking-Arbeit aus dem dann aktuellen Allocator vergeben.
-Dieser Plan wählt weder `Authorized-Work` noch `Publication-Target` und migriert das Ledger nicht.
+Die Umsetzung ergänzt bestehende Akten für Sortierung, Suchzustand, Teilergebnisse und Auswahlhilfe.
+Neue Akten für Serverfilter, Matchinformationen, ID-Deduplizierung und lokale Filter verwenden den globalen Allocator.
+Die direkte private Implementierungsfreigabe wählt weder `Authorized-Work` noch `Publication-Target` für Upstream.
+Eine allgemeine Ledger-Migration und Upstream-Publikation bleiben außerhalb des Scopes.
 
 ## Abnahmekriterien
 

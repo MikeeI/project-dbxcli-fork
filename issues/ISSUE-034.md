@@ -13,7 +13,7 @@ Source: `upstream/master@8fc3850baecaaa751e85b1673f619d29b68f3b76`
 
 ## Root-Cause
 
-Root-Cause [S]: Ergebnisbegrenzung verwirft Einträge oder beendet Pagination, ohne diesen Zustand auszugeben.
+Root-Cause [S]: Im Ausgangsstand beendet das Limit die Ergebnissammlung ohne sichtbare Kennzeichnung.
 Gesprächsreferenz: Swarm-Explore-Review `E6`; Quelle: Surface.
 
 ## Reach-and-Impact
@@ -29,6 +29,10 @@ Tatsächliche Fehlentscheidungen oder Nutzungshäufigkeiten wurden nicht beobach
 - [S] `cmd/json_output.go:23-27,35-42` besitzt bereits strukturierte Warnungen.
 - [S] `docs/json-schema/v1/README.md:67-70` erlaubt additive Warncodes mit konsistentem Vertrag.
 
+Privater Search-Fortschritt [S]: `searchSummary` trennt `stop_reason` vom letzten `server_has_more`.
+Die historischen Search-Quellanker beschreiben nicht mehr den aktuellen privaten Implementierungsstand.
+Der entsprechende Listing-Pfad bleibt unverändert und weiter offen.
+
 ## Prior-Art
 
 Coverage: Index und vorhandene Akten bis `ISSUE-017` ohne gleiche Ausgabekennzeichnung geprüft.
@@ -38,8 +42,9 @@ Contribution fit: Vorhandenen Seitenzustand nutzen; keine neue Pagination-API be
 
 ## Proposed-Change
 
-Tatsächlich ausgelassene Einträge und verbleibende Seiten bis zur Ausgabe erhalten.
-Textdiagnose auf stderr und dokumentierten JSON-Warncode mit entsprechend präziser Bedeutung verwenden.
+Für Search privat umgesetzt: Suchzusammenfassung mit API-Ende, lokalem Limit und Fehlerzustand statt eines Warncodes.
+Textdiagnosen gehen auf stderr; JSON erhält den typisierten Suchzustand.
+Für Listings bleibt die minimale verlässliche Kürzungskennzeichnung getrennt zu untersuchen.
 
 ## Scope-and-Constraints
 
@@ -47,23 +52,26 @@ Textdiagnose auf stderr und dokumentierten JSON-Warncode mit entsprechend präzi
 - Risk: Eine Ergebniszahl gleich dem Limit beweist keine Kürzung.
 - Risk: Weitere gefilterte Seiten beweisen keine weiteren passenden Treffer.
 - Exclude: Keine zusätzlichen Dropbox-Abfragen, erfundenen Gesamttrefferzahlen oder neuen Cursor-Verträge.
-- Cost: Warnmetadaten und generierte Schemas müssen gemeinsam aktualisiert werden.
+- Cost: Suchzustand, Fehlerdetails, Schemas, vorhandene Tests und Verbraucherhinweise werden gemeinsam versioniert.
 
 ## Verification
 
-Quellprüfung abgeschlossen; keine Laufzeitprüfung ausgeführt.
-Vorgeschlagen: Vollständige, tatsächlich abgeschnittene und genau passende Ergebnisse vergleichen.
-Bei `--only-deleted` gefilterte Seiten und lediglich mögliche weitere Treffer unterscheiden.
-Test decision: none; nur Tracking, keine Source- oder Teständerung.
+- [O] `TestSearchLimitCapsResultsAndStopsPagination` unterscheidet genaue letzte Seiten und tatsächlich ausgelassene Treffer.
+- [O] `TestSearchJSONErrorWritesNoOutput` prüft Initial-/Fortsetzungsfehler einschließlich Teilergebnissen und Exitklasse.
+- [O] `TestSearchUsesSearchV2AndCommandOutput` prüft die Textdiagnose mit dem tatsächlichen Search-Handler.
+- [O] Alle vorgeschriebenen Go-Gates bestehen; eine neue Listing-Kürzungsprüfung wurde nicht ergänzt.
+
+Test decision: update — die genannten vorhandenen Search-Tests schützen den privaten Teilvertrag.
+Für `ls --only-deleted` bleiben Filterseiten und nur mögliche Folgetreffer separat abzugrenzen.
 
 ## Publication-Blockers
 
-- Verlässliche Kürzungs- und Seitenzustände am Ausgabeweg prüfen.
+- Verlässliche Kürzungs- und Seitenzustände verbleibender Listing-Pfade prüfen.
 - Aktuellen kanonischen Upstream und Prior Art prüfen.
 - Arbeitsmodus, Veröffentlichungsziel und exakte Veröffentlichungsfreigabe fehlen.
 
 ## Next-Action
 
-Summary: Kürzungssignale am Ausgabeweg prüfen
-Action: Bekannte Kürzung, mögliche Folgeseiten und vollständige Ergebnisse in beiden Befehlen abgrenzen.
-Done-When: Der vorhandene Zustand trägt eindeutige Warnungen ohne zusätzliche API-Abfragen oder falsche Trefferzusagen.
+Summary: Verbleibende Listing-Kürzung offline abgrenzen
+Action: Den unveränderten Listing-Pfad auf bekannte Kürzung, mögliche Folgeseiten und vollständige Ergebnisse eingrenzen.
+Done-When: Der verbleibende Listing-Vertrag ist ohne zusätzliche API-Abfragen oder falsche Trefferzusagen belegt.

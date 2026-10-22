@@ -1,147 +1,157 @@
 # dbxcli JSON schema v1
 
-These schemas describe the stable top-level JSON envelopes emitted by
-`dbxcli --output=json` and JSON help responses emitted by
-`dbxcli --help --output=json`.
+These schemas describe command envelopes from `dbxcli --output=json` and JSON help from `dbxcli --help --output=json`.
 
 - `success.schema.json` validates successful command responses.
 - `error.schema.json` validates command error responses.
-- `manifest.schema.json` validates each command manifest object emitted by
-  JSON help.
-- `commands.json` documents command-specific input/result payload names,
-  result statuses, result kinds, and warning codes.
-- `commands.schema.json` validates command-specific success responses using
-  `commands.json`: exact command names, top-level input fields, per-result
-  input/result fields, result statuses/kinds, and warning codes.
+- `manifest.schema.json` validates each command manifest emitted by JSON help.
+- `commands.json` lists command-specific payload definitions, result statuses, result kinds, and warning codes.
+- `commands.schema.json` validates command names, input/result fields, primitive types, statuses, kinds, and warnings.
 
 ## How to validate output
 
-Use JSON help to discover a command before invoking it:
+Discover a command before invoking it:
 
 ```sh
 dbxcli put --help --output=json > put-help.json
 ```
 
-Each command manifest includes an `input_schema` object for that command's
-arguments and flags. Automation can validate planned structured input against
-that schema, then build the corresponding CLI invocation using the `x-cli-name`
-metadata.
-
-Run commands that need machine-readable results with `--output=json`:
+Each manifest's `input_schema` describes command arguments and flags.
+Validate planned structured input, then construct CLI arguments using `x-cli-name` metadata.
+Run commands requiring machine-readable results with `--output=json`:
 
 ```sh
 dbxcli put --if-exists fail --output=json report.md /Reports/report.md > result.json
 ```
 
-Validate the response based on `ok`:
+Select the response validator by its envelope:
 
-- `ok: true`: validate with `commands.schema.json`.
-- `ok: false`: validate with `error.schema.json`.
-- JSON help manifests: validate each result with `manifest.schema.json`.
+- Validate `ok: true` with `commands.schema.json`.
+- Validate `ok: false` with `error.schema.json`.
+- Validate each JSON help manifest with `manifest.schema.json`.
 
-For reproducible automation, pin schema URLs to a release tag:
+Use schemas bundled with the installed fork version or pinned to the same fork release or commit.
+Do not validate private extensions against unmodified upstream releases.
+A pinned schema URL has this form, with `<fork-commit>` replaced by the installed source revision:
 
 ```text
-https://raw.githubusercontent.com/dropbox/dbxcli/v3.5.1/docs/json-schema/v1/commands.schema.json
+https://raw.githubusercontent.com/MikeeI/project-dbxcli-fork/<fork-commit>/docs/json-schema/v1/commands.schema.json
 ```
 
-Use `master` schema URLs only when the caller intentionally wants latest
-development behavior.
+Use mutable branch URLs only when latest development behavior is intentional.
+Schema IDs are identifiers and do not replace selecting the correct versioned schema document.
 
-Schema v1 intentionally does not guarantee exact `error.message` text, Dropbox
-SDK enum exhaustiveness, or that future minor releases will avoid additive
-fields. Treat `error.code`, result `status`, result `kind`, and documented
-field names as the stable machine contract.
+## Stable envelopes
 
-Successful responses always include:
+Schema v1 does not guarantee exact error-message text, exhaustive SDK enums, or the absence of later additive fields.
+Stable machine contracts include `error.code`, result `status`, result `kind`, and documented field meanings.
+Existing top-level fields, stable error codes, and result status meanings are not removed or renamed within v1.
+New fields, commands, warning codes, and error details may be added in minor releases.
+JSON responses must not include access tokens, refresh tokens, authorization codes, or app secrets.
 
-- `ok: true`
-- `schema_version: "1"`
-- `command`: command path without the binary name, such as `ls` or
-  `share-link create`
-- `input`: command-specific request fields
-- `results`: command-specific result objects; every result includes `status`,
-  `kind`, `input`, and `result`
-- `warnings`: machine-actionable warnings, or `[]`
+Successful responses include:
 
-Schema v1 is intended to be stable. New fields, commands, warning codes, and
-error details may be added in minor releases. Existing top-level fields,
-existing stable error codes, and existing result status meanings will not be
-removed or renamed within schema v1.
+- `ok: true`.
+- `schema_version: "1"`.
+- `command`, without the binary name, such as `ls` or `share-link create`.
+- `input`, containing command-specific request fields.
+- `results`, whose objects each include `status`, `kind`, `input`, and `result`.
+- `warnings`, containing machine-actionable warnings or an empty array.
 
-JSON responses must not include access tokens, refresh tokens, authorization
-codes, or app secrets.
+Error responses include:
 
-Error responses always include:
+- `ok: false`.
+- `schema_version: "1"`.
+- `command` when available, or `dbxcli` for root/pre-parse errors.
+- `error.message`, containing human-readable text.
+- `error.code`, containing a stable machine-readable error code.
+- Optional `error.details` containing reliable structured context.
+- `warnings`, containing machine-actionable warnings or an empty array.
 
-- `ok: false`
-- `schema_version: "1"`
-- `command`: command path when available, or `dbxcli` for root/pre-parse errors
-- `error.message`: human-readable error text
-- `error.code`: stable machine-readable error code
-- `error.details`: optional machine-readable context, included only when
-  dbxcli has reliable structured details such as `argument`, `arguments`,
-  `flag`, `flags`, `value`, `path`, `revision`, `email`, `member_id`,
-  `from_path`, `to_path`, `url`, `operation`, `token_type`, `login_command`,
-  `env_var`, Dropbox `api_summary`, Dropbox `api_endpoint`, `bytes_written`,
-  or `retry_after_seconds`
-- `warnings`: machine-actionable warnings, or `[]`
+In JSON mode, success and error envelopes go to stdout.
+Human warnings, progress, diagnostics, and verbose logs go to stderr.
+Error responses retain a nonzero exit status.
 
-Reusable `error.details` keys:
+## Search extensions
 
-| Key | Meaning |
-| --- | --- |
-| `argument` | Single positional argument related to validation or remediation. |
-| `arguments` | Multiple positional arguments related to validation or remediation. |
-| `flag` | Single CLI flag related to validation or remediation, without leading dashes. |
-| `flags` | Multiple CLI flags related to validation or remediation, without leading dashes. |
-| `value` | Invalid or relevant user-provided flag value. |
-| `path` | Dropbox or local path directly related to the error. |
-| `revision` | Dropbox file revision directly related to the error. |
-| `email` | Email address directly related to the error. |
-| `member_id` | Dropbox team member ID supplied by the caller, such as `--as-member`. |
-| `from_path` | Source path for copy, move, upload, download, or another relocation-style operation. |
-| `to_path` | Destination path for copy, move, upload, download, or another relocation-style operation. |
-| `url` | Shared-link or API URL related to the error. |
-| `operation` | High-level operation, such as `upload`, `download`, `delete`, `restore`, or `share_link_create`. |
-| `token_type` | Credential type related to an auth error. |
-| `login_command` | Suggested login command for auth remediation. |
-| `env_var` | Environment variable related to auth or configuration remediation. |
-| `api_summary` | Dropbox API error summary when available. |
-| `api_endpoint` | Dropbox API endpoint parsed from an SDK error message when available. |
-| `bytes_written` | Number of bytes written before a partial stdout transfer failed. |
-| `retry_after_seconds` | Number of seconds to wait before retrying a rate-limited request. |
+New search producers always add a `search` summary to successful responses.
+Its presence remains optional in the evolved v1 schemas so older producer responses still validate.
+When the summary is present, its six fields are required:
 
-Prefer these existing path keys before adding new synonyms: use `path` for one
-directly relevant path and `from_path`/`to_path` for relocation-style source
-and destination context. Add a new key such as `target` or `local_path` only
-when the existing keys would be ambiguous.
+- `limit` is the local uint64 result limit; zero means unlimited.
+- `stop_reason` is `api_exhausted`, `limit`, or `error`.
+- `server_has_more` is the last successful API page flag, or null before any successful page.
+- `local_filters_applied` reports local metadata filtering, not server filtering.
+- `api_matches_seen` counts received API matches, including duplicates and locally rejected matches.
+- `api_match_limit` is 10000, the documented provider limit rather than a total-count guarantee.
 
-In JSON mode, command result and error envelopes are written to stdout. The
-`warnings` field contains machine-actionable warning objects. Human-facing
-warnings, progress, diagnostics, and verbose logs are written to stderr. Error
-responses exit with a non-zero status.
+`api_exhausted` means received matches were processed and the API reported no further page.
+`limit` means the CLI omitted matching entries in a received page or did not fetch further pages after reaching its limit.
+The last API flag can be false while local truncation occurred within that page.
+API exhaustion is not proof of account-wide completeness, and there is no reliable cap-reached field.
+Dropbox documents index delays, possible omitted matches, duplicates, and the 10,000-match ceiling: https://docs.dropboxapi.com/dropbox-api/api-reference/user-endpoints/files/search-v-2
 
-Commands that intentionally do not support structured command-result JSON yet
-include `login` and `completion`. Their help output is still
-available as a JSON command manifest with `--help --output=json`; for example,
-`dbxcli --help --output=json`, `dbxcli version --help --output=json`, and
-`dbxcli --output=json help version`. `dbxcli --output=json` without `--help`
-continues to print text help, and shell-completion protocol commands remain
-text-only.
+Search uses a dedicated metadata definition adding optional `name`, `match_type`, and `highlight_spans`.
+The shared metadata payload used by other commands is unchanged.
+`match_type` is an open string, not a closed list of future Dropbox enum variants.
+Each highlight span requires `highlight_str` and `is_highlighted`; these are title segments, not content snippets.
+Requesting highlights requires JSON output.
+
+Search failures retain accepted entries under `error.details.partial_results` and the state under `error.details.search`.
+Partial entries use the same wrapper and search metadata projection as successful results.
+The original error code and exit class remain failures; partial results do not turn the whole search into success.
+The error schema describes these fields through local definitions without an external schema dependency.
+
+Older v1 replies without a summary have unknown completion state.
+Do not infer summary support from `schema_version: "1"` alone.
+Older closed schema files reject added fields and must be updated; tolerant readers can continue using known fields.
+
+## Structured error details
+
+Reusable keys have these meanings:
+
+- `argument` identifies a positional argument related to validation or remediation.
+- `arguments` lists positional arguments related to the error.
+- `flag` identifies a CLI flag without leading dashes.
+- `flags` lists related flags without leading dashes.
+- `value` records a relevant invalid string, number, or boolean value.
+- `path` identifies a directly relevant Dropbox or local path.
+- `revision` identifies a related Dropbox revision.
+- `email` identifies the related address.
+- `member_id` identifies a selected Dropbox team member, such as `--as-member`.
+- `from_path` and `to_path` identify relocation source and destination paths.
+- `url` identifies a related shared-link or API URL.
+- `operation` identifies an operation such as `upload`, `download`, `delete`, `restore`, or `share_link_create`.
+- `token_type` identifies the related token kind.
+- `login_command` gives the suggested authentication remediation command.
+- `env_var` names the relevant environment variable.
+- `api_summary` preserves an available Dropbox error summary.
+- `api_endpoint` names a Dropbox endpoint extracted from an SDK error message.
+- `bytes_written` records output confirmed before a failed stdout transfer.
+- `retry_after_seconds` records the suggested delay for a rate-limited request.
+- `search` and `partial_results` preserve failed-search state and accepted results as described above.
+
+Prefer existing path keys over synonyms: `path` for one relevant path and `from_path`/`to_path` for relocations.
+Add keys such as `target` or `local_path` only when the existing names would be ambiguous.
+
+## Generation and supported commands
+
+`login` and `completion` intentionally lack normal structured command-result JSON.
+Their help remains available as JSON manifests, including root, version, and `help version` discovery.
+`dbxcli --output=json` without `--help` still prints text help; shell-completion protocols remain text-only.
 
 The current JSON-enabled command paths are listed in `commands.json`.
-`commands.schema.json` is generated from that catalog plus schema metadata in
-the generator:
+The catalog is maintained input, not generated output.
+`commands.schema.json` is generated from it and typed metadata in `internal/jsonschema/`:
 
 ```sh
 go run ./tools/gen-json-schemas
 ```
 
-The command-specific schema locks which fields may appear, which fields are
-required when stable, primitive field types, stable nested objects, result
-statuses/kinds, and warning codes. It intentionally avoids over-modeling
-Dropbox SDK enum values that dbxcli does not own.
+The generator does not rewrite `success.schema.json`, `error.schema.json`, or `commands.json`.
+Command-specific schemas constrain allowed fields, stable required fields, primitive types, nested objects and enums.
+They avoid over-modeling Dropbox SDK enum values not owned by dbxcli.
+Golden fixtures under `cmd/testdata/json_contract/` lock command input/result contracts.
 
 ## Command Manifest v1
 
@@ -153,77 +163,53 @@ dbxcli put --help --output=json
 dbxcli --output=json help put
 ```
 
-Each manifest result has `status: "described"`, `kind: "command"`, and a
-`result` object that validates against `manifest.schema.json`.
+Each help result has `status: "described"`, `kind: "command"`, and a result validating against `manifest.schema.json`.
+Manifest v1 preserves original help fields and adds:
 
-Manifest v1 keeps the original JSON help fields and adds machine-contract
-metadata:
+- `manifest_version: "1"` and structured `args`.
+- Enriched `flags` with enums, conflicts, prompt behavior, and sensitive-input metadata.
+- Generated `input_schema` with bounded-value enums.
+- `examples` and `schema_refs`.
+- Best-effort audited `dropbox_scopes` and `stdin_stdout`.
+- `result_statuses`, `result_kinds`, and `warning_codes`.
 
-- `manifest_version: "1"`
-- structured `args`
-- enriched `flags`, including enum values, conflicts, prompt behavior, and
-  sensitive inputs
-- generated `input_schema` for command arguments and flags, including enum
-  values when an argument or flag has a bounded value set
-- `examples`
-- `schema_refs`
-- best-effort audited `dropbox_scopes`
-- `stdin_stdout`
-- `result_statuses`, `result_kinds`, and `warning_codes`
+`input_schema` supports tools, MCP-style integrations, and planners validating inputs before invocation.
+It excludes `--help` and `--output`, maps hyphens to underscores, and retains original names in `x-cli-name`.
+No-auth commands may omit globally accepted flags that do not affect them.
+Sensitive properties use `writeOnly` and `x-sensitive`; conflicts use `x-conflicts`.
+StringSlice/StringArray flags are arrays with string items; enum constraints apply to items.
+Optional presence-sensitive size bounds have no schema default, even though Cobra's technical zero is visible in flags.
+Omit an unselected bound instead of materializing zero; explicitly supplied zero is preserved in execution input.
 
-`input_schema` is a JSON Schema object generated from the command manifest's
-structured positional arguments and flags. It is intended for tool callers,
-MCP-style integrations, and automation planners that need to validate command
-inputs before building a CLI invocation. It excludes `--help` and `--output`,
-uses JSON-friendly property names such as `if_exists`, and preserves the
-original CLI names in `x-cli-name`. Flags that are accepted globally but do not
-affect a no-auth command may be omitted from that command's `input_schema`.
-Sensitive inputs are marked with `writeOnly` and `x-sensitive`; flag conflicts
-are listed in `x-conflicts`.
+For structured commands, `schema_refs.command_success_schema` identifies a definition in `commands.schema.json`.
+`schema_refs.command_contract` identifies the source catalog entry in `commands.json`.
+`scope_accuracy: audited_best_effort` describes audited planning metadata, not a substitute for runtime API errors.
 
-For commands with structured JSON output, `schema_refs.command_success_schema`
-points to the command-specific definition inside `commands.schema.json`.
-`schema_refs.command_contract` points to the source catalog entry in
-`commands.json`.
+Account results contain auth context under `results[0].result.auth`:
 
-`scope_accuracy` is currently `audited_best_effort` for commands with audited
-manifest metadata. Scope metadata is intended for planning and diagnostics;
-Dropbox API errors remain the source of truth at runtime.
+- `source` is `saved` or `env`.
+- `refreshable` is a boolean.
+- `auth_file` is `default`, `custom`, or `none`; the full auth-file path is not included by default.
 
-`account` results include auth context under `result.auth`:
-`result.auth.source` is `saved` or `env`; `result.auth.refreshable` is a
-boolean; and `result.auth.auth_file` is `default`, `custom`, or `none`.
-dbxcli does not include the full auth file path by default.
+Warnings have a stable `code` and human-readable `message` and may contain optional command-specific context.
+Current codes include `deprecated_command` for deprecated paths and `skipped_symlink` for recursive uploads.
+`logout` may return `token_revoke_failed` after local removal when remote revocation failed.
 
-Warnings are objects with a stable `code` and human-readable `message`; they
-may include optional command-specific details. JSON responses from deprecated
-command paths include `deprecated_command`. Current warning codes include
-`deprecated_command` for deprecated command paths and `skipped_symlink` for
-symlinks skipped by recursive upload. `logout` may return `token_revoke_failed`
-when saved credentials were removed locally but one or more Dropbox tokens could
-not be revoked remotely.
+## Stable error codes
 
-Stable error codes:
-
-| Code                            | Meaning                                                                           |
-|---------------------------------|-----------------------------------------------------------------------------------|
-| `invalid_arguments`             | The command arguments or flags are invalid.                                       |
-| `path_conflict`                 | A local or Dropbox path conflicts with the requested operation.                   |
-| `auth_required`                 | No usable saved credentials were found, or Dropbox rejected the saved token.      |
-| `auth_refresh_failed`           | Saved refreshable credentials could not be refreshed.                             |
-| `app_key_required`              | Login or token refresh needs a Dropbox app key.                                   |
-| `auth_exchange_failed`          | The OAuth authorization-code exchange failed or returned unusable tokens.         |
-| `not_found`                     | Dropbox reported that the requested object was not found.                         |
-| `partial_transfer`              | A download-to-stdout stream failed after partial output was already written.      |
-| `permission_denied`             | Dropbox denied access because of permissions, scope, member selection, or state.  |
-| `rate_limited`                  | Dropbox rate limited the request.                                                 |
-| `dropbox_api_error`             | Dropbox returned an API error that does not map to a more specific code yet.      |
-| `env_token_still_active`        | `DBXCLI_ACCESS_TOKEN` is set and must be unset before logout can complete.        |
-| `structured_output_unsupported` | The command does not support `--output=json` yet.                                 |
-| `unknown_command`               | Cobra could not resolve the command.                                              |
-| `unknown_flag`                  | Cobra could not resolve a flag.                                                   |
-| `command_failed`                | Fallback for failures without a more specific stable code.                        |
-
-Command-specific `input` and `result` payload contracts are listed in
-`commands.json`, validated through `commands.schema.json`, and locked by the
-golden contract fixtures under `cmd/testdata/json_contract/`.
+- `invalid_arguments`: Invalid command arguments or flags.
+- `path_conflict`: A local or Dropbox path conflicts with the requested operation.
+- `auth_required`: No usable saved credentials, or Dropbox rejected the token.
+- `auth_refresh_failed`: Saved refreshable credentials could not be refreshed.
+- `app_key_required`: Login or refresh requires a Dropbox app key.
+- `auth_exchange_failed`: OAuth exchange failed or returned unusable tokens.
+- `not_found`: Dropbox reported that the requested object was not found.
+- `partial_transfer`: A download-to-stdout stream failed after partial output.
+- `permission_denied`: Permissions, scope, member selection, or account state denied access.
+- `rate_limited`: Dropbox rate limited the request.
+- `dropbox_api_error`: An API failure without a more specific mapped code.
+- `env_token_still_active`: `DBXCLI_ACCESS_TOKEN` must be unset before logout can complete.
+- `structured_output_unsupported`: The command does not support normal `--output=json` execution.
+- `unknown_command`: Cobra could not resolve the command.
+- `unknown_flag`: Cobra could not resolve a flag.
+- `command_failed`: Fallback when no more specific stable code applies.

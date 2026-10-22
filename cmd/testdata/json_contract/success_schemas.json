@@ -235,17 +235,55 @@
       "time",
       "time_format"
     ],
+    "search_highlight_span": [
+      "highlight_str",
+      "is_highlighted"
+    ],
     "search_input": [
+      "category",
       "content",
+      "exclude_name_contains",
+      "ext",
+      "highlights",
       "limit",
       "long",
+      "max_size",
+      "min_size",
+      "modified_before",
+      "modified_from",
+      "name_contains",
+      "name_glob",
+      "name_regex",
       "order_by",
       "path",
       "query",
       "reverse",
       "sort",
       "time",
-      "time_format"
+      "time_format",
+      "type"
+    ],
+    "search_metadata": [
+      "client_modified",
+      "deleted",
+      "highlight_spans",
+      "id",
+      "match_type",
+      "name",
+      "path_display",
+      "path_lower",
+      "rev",
+      "server_modified",
+      "size",
+      "type"
+    ],
+    "search_summary": [
+      "api_match_limit",
+      "api_matches_seen",
+      "limit",
+      "local_filters_applied",
+      "server_has_more",
+      "stop_reason"
     ],
     "share_folder": [
       "access_inheritance",
@@ -633,7 +671,8 @@
       "result_wrapper": "operation_result",
       "input": "search_input",
       "result_input": "empty",
-      "result": "metadata",
+      "result": "search_metadata",
+      "search_summary": "search_summary",
       "statuses": [
         "found"
       ],

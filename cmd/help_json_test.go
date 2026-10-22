@@ -353,6 +353,31 @@ func TestJSONHelpManifestV1SelectedCommandMetadata(t *testing.T) {
 	cpIfExists := assertJSONHelpInputProperty(t, cp.InputSchema, "if_exists", "string", "flag", "if-exists", "enum")
 	assertStringSliceEqual(t, "cp input_schema if_exists enum", cpIfExists.Enum, []string{"autorename", "fail", "skip"})
 
+	search := jsonCommandManifestFor(searchCmd)
+	categories := assertJSONHelpInputProperty(t, search.InputSchema, "category", "array", "flag", searchFlagCategory, "enum")
+	if categories.Items == nil || categories.Items.Type != "string" || len(categories.Enum) != 0 {
+		t.Fatalf("category array schema = %#v", categories)
+	}
+	assertStringSliceEqual(t, "search category items", categories.Items.Enum, searchCategories)
+	for _, property := range []string{"category", "ext", "exclude_name_contains"} {
+		value := search.InputSchema.Properties[property]
+		if value.Type != "array" || value.Items == nil || value.Items.Type != "string" || value.Default != nil {
+			t.Fatalf("%s schema = %#v", property, value)
+		}
+	}
+	for _, property := range []string{"min_size", "max_size"} {
+		value := search.InputSchema.Properties[property]
+		if value.Type != "integer" || value.Default != nil {
+			t.Fatalf("%s invents a zero default: %#v", property, value)
+		}
+	}
+	if search.InputSchema.Properties["modified_from"].Format != "date-time" ||
+		search.InputSchema.Properties["modified_before"].Format != "date-time" {
+		t.Fatal("search modification bounds lack date-time format")
+	}
+	assertStringSliceEqual(t, "search entry types", search.InputSchema.Properties["type"].Enum, searchEntryTypes)
+	assertStringSliceEqual(t, "search required input", search.InputSchema.Required, []string{"query"})
+
 	create := jsonCommandManifestFor(shareLinkCreateCmd)
 	assertStringSliceEqual(t, "share-link create audience enum", jsonHelpFlagByName(t, create.Flags, "audience").EnumValues, []string{"public", "team", "members", "no-one"})
 	assertStringSliceEqual(t, "share-link create allow conflict", jsonHelpFlagByName(t, create.Flags, "allow-download").Conflicts, []string{"disallow-download"})

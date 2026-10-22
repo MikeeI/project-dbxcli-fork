@@ -45,11 +45,24 @@ Each goal still needs a finding in `ISSUES.md` and an explicit `Authorized-Work`
 - Merge matches across pages by file ID.
 - The official documentation explicitly warns that duplicates may appear across pages.
 
+### 5. Filter returned metadata locally (small to medium)
+
+- Filter results the server cannot filter, using only fields already present in the returned metadata.
+- Name: glob, regex, contains, and exclusions, for example everything except names containing "Draft".
+- Size: minimum and maximum.
+- Modified time: range on `server_modified` or `client_modified`.
+- Entry type: files only or folders only, from the `.tag` field.
+- The result limit counts only entries that pass the filters.
+- Collect further pages until enough matching entries exist or the search ends or hits the 10,000-match cap.
+- Never filter an already limited result list; that silently loses matches on later pages.
+- Local filters save no server work, and a local date filter is not a server-side date filter.
+- Output must say that local filters were applied and whether the search ended before the limit was met.
+
 ## Acceptance Direction
 
 - An agent can distinguish complete, limit-truncated, and error-truncated results from the output alone.
 - No result collected before a failure is discarded.
-- Filters apply server-side, before the result limit.
+- Server-side filters apply to the request; local filters apply before the result limit counts entries.
 - Existing text output and JSON v1 consumers keep working.
 
 ## Non-Goals

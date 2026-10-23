@@ -1,6 +1,6 @@
 # ISSUE-001 — Uploads: vermeidbare Zwischenpuffer für vollständige Chunks
 
-State: Investigating
+State: Archived
 Authorized-Work: Not-Selected
 Publication-Target: Not-Selected
 External-Reference: Not published.
@@ -8,7 +8,7 @@ Contribution-Priority: Medium
 Root-Cause-Confidence: High
 Finding-Category: Performance
 Created: 2026-10-22
-Updated: 2026-10-22
+Updated: 2026-10-23
 Source: `upstream/master@8fc3850baecaaa751e85b1673f619d29b68f3b76`
 
 ## Root-Cause
@@ -56,7 +56,8 @@ Vollständige Chunks direkt in einmalig auf die Chunkgröße dimensionierte Puff
 Den bisherigen Teilchunk-Pfad einschließlich seiner Längenprüfung unverändert lassen.
 Nicht-EOF-Lesefehler auch bei gleichzeitig vollständiger Datenlieferung weitergeben.
 EOF und Kurzlesen müssen weiterhin die bisherige Behandlung beziehungsweise Fehlermeldung auslösen.
-Die Änderung ist ein Vorschlag und nicht zur Implementierung autorisiert.
+Der Nutzer autorisierte die private Umsetzung dieses Review-Befunds `P1` am 2026-10-23 mit „fix all issues“.
+Diese Freigabe wählt weder einen Upstream-Arbeitsmodus noch ein Veröffentlichungsziel.
 
 ## Scope-and-Constraints
 
@@ -71,6 +72,8 @@ Die Änderung ist ein Vorschlag und nicht zur Implementierung autorisiert.
 
 ## Verification
 
+### Historischer Untersuchungsstand
+
 Abgeschlossen [O]: Source-Abgleich mit dem frisch abgerufenen kanonischen Upstream ohne relevante Quelldifferenz.
 Nicht ausgeführt: Implementierung, Tests, Transfer-Szenarien und Laufzeitmessungen.
 Nach autorisierter Implementierung ist folgende Verifikation erforderlich:
@@ -80,15 +83,35 @@ Nach autorisierter Implementierung ist folgende Verifikation erforderlich:
 - Ein Vergleich identischer vollständiger Chunks muss das Allokationsvolumen vor und nach der Änderung erfassen.
 - Übertragungsdauer und Spitzenspeicher sind separat zu messen und nicht aus Allokationsbytes abzuleiten.
 
+### Privater Abschluss am 2026-10-23
+
+[O] Commit `5843c2f` auf `personal` wurde nach `origin/personal` gepusht.
+[S] `cmd/put.go:117-136,181-192` liest vollständige Chunks direkt und erhält den bisherigen Teilchunk-Pfad samt Längenprüfung.
+[O] Der isolierte 16-MiB-Lesevergleich unter Go 1.27.3 auf Linux/amd64 ergibt 36224962 → 16777264 Allokationsbytes und 33 → 2 Allokationen pro Operation.
+[O] Gemessen wurden 6584643 → 2103644 ns pro isolierter Leseoperation; das ist keine Ende-zu-Ende-Transfermessung.
+[O] Acht temporäre Lesefälle bestätigen volle und kurze Eingaben, EOF, Quelldateiwachstum sowie Daten zusammen mit Nicht-EOF-Fehlern.
+[O] Vorhandene Chunk-/Retry-Prüfungen sowie `go test ./...`, `go vet ./...`, `go build ./...` und `go test -race ./...` bestehen.
+[O] `golangci-lint run --fix ./...` meldet ausschließlich den unveränderten ungenutzten Helfer `cmd/json_metadata.go:64`.
+Test decision: none; keine permanente Testfunktion für die Pufferoptimierung ergänzt.
+Temporäre Mess- und Smoke-Dateien wurden entfernt; keine Live-Transfers, globale Installation oder Upstream-Veröffentlichung.
+`ISSUE-007` und `ISSUE-008` bleiben separate Korrektheitsbefunde.
+
 ## Publication-Blockers
 
-- Repräsentative Allokations- und Kopierprofile fehlen; die praktische Priorität ist noch nicht empirisch bestätigt.
+- Live-Transferdauer und Spitzenspeicher sind nicht gemessen; die isolierte Allokationsmessung belegt keine Ende-zu-Ende-Beschleunigung.
 - Prior Art und aktuelle Upstream-Beitragsvorgaben sind vor einer Veröffentlichung zu prüfen.
 - `Authorized-Work` und `Publication-Target` sind vom Nutzer noch nicht ausgewählt.
 - Ein exakter Veröffentlichungsentwurf und dessen Freigabe liegen nicht vor.
 
 ## Next-Action
 
-Summary: Allokationsdruck ohne Produktivänderungen messen
-Action: Eine Ausgangsmessung für vollständige 16-MiB-Chunks samt Allokations- und Kopierprofil erheben.
-Done-When: Reproduzierbarer Workload, Toolchain und Messwerte sind ohne behaupteten Ende-zu-Ende-Gewinn dokumentiert.
+Summary: —
+Action: None.
+Done-When: None.
+
+## Archive
+
+Archive-Reason: Other
+Detail: Privat autorisierte Pufferoptimierung implementiert, geprüft und auf origin/personal gepusht; keine Upstream-Erledigung behauptet.
+Evidence: `5843c2f`; isolierter 16-MiB-Vergleich, Lesefehler-Smokes und vorgeschriebene Go-Prüfungen.
+Checked: 2026-10-23

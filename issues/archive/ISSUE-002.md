@@ -1,6 +1,6 @@
 # ISSUE-002 — CLI-Start: unnötige Namespace-Abfrage bei account und du
 
-State: Investigating
+State: Archived
 Authorized-Work: Not-Selected
 Publication-Target: Not-Selected
 External-Reference: Not published.
@@ -8,7 +8,7 @@ Contribution-Priority: Low
 Root-Cause-Confidence: High
 Finding-Category: Performance
 Created: 2026-10-22
-Updated: 2026-10-22
+Updated: 2026-10-23
 Source: `upstream/master@8fc3850baecaaa751e85b1673f619d29b68f3b76`
 
 ## Root-Cause
@@ -59,7 +59,8 @@ Die Namespace-Ermittlung ausschließlich bei `account` und `du` überspringen.
 Credential-Laden, OAuth-Refresh, `currentAuthContext`, Domain und Member-Auswahl bleiben erhalten.
 Der eigentliche Nutzaufruf bleibt frisch und behält seine Fehlerbehandlung.
 Keinen Account-Snapshot wiederverwenden und keinen persistenten Cache einführen.
-Die Änderung ist ein Vorschlag und nicht zur Implementierung autorisiert.
+Der Nutzer autorisierte die private Umsetzung dieses Review-Befunds `P3` am 2026-10-23 mit „fix all issues“.
+Diese Freigabe wählt weder einen Upstream-Arbeitsmodus noch ein Veröffentlichungsziel.
 
 ## Scope-and-Constraints
 
@@ -76,6 +77,8 @@ Die Änderung ist ein Vorschlag und nicht zur Implementierung autorisiert.
 
 ## Verification
 
+### Historischer Untersuchungsstand
+
 Abgeschlossen [O]: Source-Abgleich mit dem frisch abgerufenen kanonischen Upstream ohne relevante Quelldifferenz.
 Nicht ausgeführt: Implementierung, Tests, Kontoabfragen und Laufzeitmessungen.
 Nach autorisierter Implementierung ist folgende Verifikation erforderlich:
@@ -87,15 +90,36 @@ Nach autorisierter Implementierung ist folgende Verifikation erforderlich:
 - Fehler des Nutzendpunkts müssen erhalten bleiben; der entfallene Namespace-Hinweis ist kein Ausgaberegressionsfehler.
 - Ein dateipfadabhängiges Kommando muss seinen bisherigen Root-Namespace weiterhin erhalten.
 
+### Privater Abschluss am 2026-10-23
+
+[O] Commit `743ff88` auf `personal` wurde nach `origin/personal` gepusht.
+[S] `cmd/root.go:242,258,263-285` überspringt die Namespace-Ermittlung ausschließlich für `account` und `du`.
+[O] Der temporäre Initialisierungs-Smoke zeigt bei direkten und gespeicherten Tokens jeweils 1 → 0 Namespace-Aufrufe für beide Kommandos.
+[O] `ls` behält jeweils genau einen Namespace-Aufruf und den ermittelten Root-Namespace.
+[O] Cobra-Ausführung samt Initialisierung und echten Account-/Quota-Handlern bestätigt genau einen Nutzaufruf, Text/JSON-Ausgabe, Member-Auswahl und unveränderte Nutzfehler.
+[O] `account dbid:lookup` besteht zusätzlich mit beiden Auth-Quellen ohne Current-Account-Abfrage.
+[O] `go test ./...`, `go vet ./...`, `go build ./...` und `go test -race ./...` bestehen.
+[O] `golangci-lint run --fix ./...` meldet ausschließlich den unveränderten ungenutzten Helfer `cmd/json_metadata.go:64`.
+Test decision: update; `TestWithRootNamespaceSkipsTeamManage` und `TestWithRootNamespaceKeepsConfigOnAccountError` erhalten nur den neuen erforderlichen Commandnamen.
+Keine Testassertion wurde abgeschwächt; temporäre Smokes wurden entfernt.
+Keine Live-Kontoabfragen, globale Installation oder Upstream-Veröffentlichung.
+
 ## Publication-Blockers
 
-- Eine kontrollierte Ablaufverifikation ohne Live-Kontozugriff fehlt.
+- Die private Offline-Verifikation belegt die Requestreduktion, aber keine reale Latenzersparnis.
 - Prior Art und aktuelle Upstream-Beitragsvorgaben sind vor einer Veröffentlichung zu prüfen.
 - `Authorized-Work` und `Publication-Target` sind vom Nutzer noch nicht ausgewählt.
 - Ein exakter Veröffentlichungsentwurf und dessen Freigabe liegen nicht vor.
 
 ## Next-Action
 
-Summary: Prior Art vollständig recherchieren
-Action: Upstream-Issues, PRs, Diskussionen und Releases zum unnötigen Namespace-RPC bei Account-Abfragen prüfen.
-Done-When: Suchabdeckung, relevante Treffer, Dublettenbewertung und verbleibende Recherchelücken sind dokumentiert.
+Summary: —
+Action: None.
+Done-When: None.
+
+## Archive
+
+Archive-Reason: Other
+Detail: Privat autorisierte Namespace-Ausnahme implementiert, geprüft und auf origin/personal gepusht; keine Upstream-Erledigung behauptet.
+Evidence: `743ff88`; Initialisierungs- und Cobra-Smokes für direkte und gespeicherte Credentials sowie vorgeschriebene Go-Prüfungen.
+Checked: 2026-10-23

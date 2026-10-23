@@ -7,7 +7,7 @@ This file owns `Next finding ID` and projects current issue-file state.
 `Next-Action` is the 2–6 word `Next-Action/Summary` projection from the issue record.
 When a row disagrees with its issue file, correct the row from the issue file in the same task.
 
-Next finding ID: ISSUE-040
+Next finding ID: ISSUE-041
 
 Die Akten `ISSUE-006` bis `ISSUE-022` übernehmen das semantische Audit einschließlich Review-Korrekturen.
 Gesprächs-IDs gelten nur innerhalb ihrer benannten Analyse; gleiche E-IDs verschiedener Audits sind keine Dubletten.
@@ -23,8 +23,6 @@ Der Dot-Segment-Fall bleibt ohne belegte Authority blockiert.
 
 | ID | Finding | State | Authorized-Work | Publication-Target | Contribution-Priority | Next-Action | External-Reference |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| [ISSUE-001](issues/ISSUE-001.md) | Uploads: vermeidbare Zwischenpuffer für vollständige Chunks | Investigating | Not-Selected | Not-Selected | Medium | Allokationsdruck ohne Produktivänderungen messen | Not published. |
-| [ISSUE-002](issues/ISSUE-002.md) | CLI-Start: unnötige Namespace-Abfrage bei account und du | Investigating | Not-Selected | Not-Selected | Low | Prior Art vollständig recherchieren | Not published. |
 | [ISSUE-004](issues/ISSUE-004.md) | Uploads: doppelte Traversierung für Planung und Ausführung | Investigating | Not-Selected | Not-Selected | Low | Traversierungsrefaktorierung gegen Prior Art prüfen | Not published. |
 | [ISSUE-005](issues/ISSUE-005.md) | CLI-Metadaten: getrennte Register und redundanter Auditstatus | Investigating | Not-Selected | Not-Selected | Low | Registervereinfachung gegen Prior Art prüfen | Not published. |
 | [ISSUE-006](issues/ISSUE-006.md) | Downloads: Exportnamen überschreiben andere rekursive Quellen | Investigating | Not-Selected | Not-Selected | High | Exportkollision gegen Prior Art prüfen | Not published. |
@@ -51,7 +49,6 @@ Der Dot-Segment-Fall bleibt ohne belegte Authority blockiert.
 | [ISSUE-027](issues/ISSUE-027.md) | Rekursives get: Textpfad verwirft den gewählten Fehlerwriter | Investigating | Not-Selected | Not-Selected | Low | Rekursiven Fehlerwriter offline nachweisen | Not published. |
 | [ISSUE-028](issues/ISSUE-028.md) | CLI-Hilfe: Begrenzung vor lokaler Sortierung bleibt unklar | Investigating | Not-Selected | Not-Selected | Medium | Verbleibende Listing-Hilfe offline abgleichen | Not published. |
 | [ISSUE-029](issues/ISSUE-029.md) | Shell-Completion: bekannte Konfliktstrategien werden nicht angeboten | Investigating | Not-Selected | Not-Selected | Low | Enum-Completion offline abgrenzen | Not published. |
-| [ISSUE-030](issues/ISSUE-030.md) | Gelöschte Dateien: neun ungenutzte Revisionen werden mitabgerufen | Investigating | Not-Selected | Not-Selected | Low | Revisionslimit offline vergleichen | Not published. |
 | [ISSUE-031](issues/ISSUE-031.md) | Sammeloperationen: Gesamtfehler verwirft bestätigte Einzelresultate | Investigating | Not-Selected | Not-Selected | Medium | Teilergebnisvertrag offline eingrenzen | Not published. |
 | [ISSUE-032](issues/ISSUE-032.md) | CLI-Validierung: fehlende Operanden werden erst nach Authentifizierung erkannt | Investigating | Not-Selected | Not-Selected | Medium | Validierungsreihenfolge offline nachweisen | Not published. |
 | [ISSUE-033](issues/ISSUE-033.md) | Uploads: revisionsgebundenes Zurückschreiben fehlt im Bearbeitungszyklus | Investigating | Not-Selected | Not-Selected | Low | Bedarf für Revisionsbedingung bestätigen | Not published. |
@@ -62,8 +59,12 @@ Der Dot-Segment-Fall bleibt ohne belegte Authority blockiert.
 
 | ID | Finding | Authorized-Work | Publication-Target | Contribution-Priority | Archive-Reason | External-Reference |
 | --- | --- | --- | --- | --- | --- | --- |
+| [ISSUE-001](issues/archive/ISSUE-001.md) | Uploads: vermeidbare Zwischenpuffer für vollständige Chunks | Not-Selected | Not-Selected | Medium | Other | Not published. |
+| [ISSUE-002](issues/archive/ISSUE-002.md) | CLI-Start: unnötige Namespace-Abfrage bei account und du | Not-Selected | Not-Selected | Low | Other | Not published. |
 | [ISSUE-003](issues/archive/ISSUE-003.md) | Rückwärtssortierung: instabile Reihenfolge bei gleichen Schlüsseln | Not-Selected | Not-Selected | Medium | Other | Not published. |
+| [ISSUE-030](issues/archive/ISSUE-030.md) | Gelöschte Dateien: neun ungenutzte Revisionen werden mitabgerufen | Not-Selected | Not-Selected | Low | Other | Not published. |
 | [ISSUE-036](issues/archive/ISSUE-036.md) | Search: öffentliche Kategorie- und Erweiterungsfilter fehlen | Not-Selected | Not-Selected | Medium | Other | Not published. |
 | [ISSUE-037](issues/archive/ISSUE-037.md) | Search: Matchtyp und Titel-Highlights gehen verloren | Not-Selected | Not-Selected | Medium | Other | Not published. |
 | [ISSUE-038](issues/archive/ISSUE-038.md) | Search: doppelte IDs verbrauchen das Ergebnislimit | Not-Selected | Not-Selected | Medium | Other | Not published. |
 | [ISSUE-039](issues/archive/ISSUE-039.md) | Search: lokale Metadatenfilter fehlen vor der Ergebnisauswahl | Not-Selected | Not-Selected | Medium | Other | Not published. |
+| [ISSUE-040](issues/archive/ISSUE-040.md) | Uploads: unveränderte Chunkdaten werden bei Retries erneut gehasht | Not-Selected | Not-Selected | Low | Other | Not published. |

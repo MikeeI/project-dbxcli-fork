@@ -29,6 +29,7 @@ import (
 
 	"github.com/dropbox/dbxcli/v3/internal/output"
 	"github.com/dropbox/dropbox-sdk-go-unofficial/v6/dropbox"
+	"github.com/dropbox/dropbox-sdk-go-unofficial/v6/dropbox/contenthash"
 	"github.com/dropbox/dropbox-sdk-go-unofficial/v6/dropbox/files"
 	"github.com/dustin/go-humanize"
 	"github.com/mitchellh/ioprogress"
@@ -56,9 +57,19 @@ type uploadChunk struct {
 }
 
 func uploadOneChunk(dbx filesClient, args *files.UploadSessionAppendArg, data []byte) error {
+	// The SDK hashes a copy of its arguments; retain the immutable chunk's hash
+	// locally across retries without mutating the caller's arguments.
+	chunkArgs := *args
 	return retryWithBackoff(func() error {
-		err := dbx.UploadSessionAppendV2Context(currentContext(), args, bytes.NewReader(data))
-		if uploadChunkAlreadyAccepted(err, args.Cursor.Offset+uint64(len(data))) {
+		if chunkArgs.ContentHash == "" {
+			hash, err := contenthash.Compute(bytes.NewReader(data))
+			if err != nil {
+				return fmt.Errorf("files: auto content_hash: compute: %w", err)
+			}
+			chunkArgs.ContentHash = hash
+		}
+		err := dbx.UploadSessionAppendV2Context(currentContext(), &chunkArgs, bytes.NewReader(data))
+		if uploadChunkAlreadyAccepted(err, chunkArgs.Cursor.Offset+uint64(len(data))) {
 			return nil
 		}
 		return err
@@ -101,6 +112,28 @@ func uploadSingleShot(dbx filesClient, r io.ReadSeeker, uploadArg *files.UploadA
 		return err
 	})
 	return metadata, err
+}
+
+// Full chunks have a known size, but ReadFull would discard a non-EOF error
+// returned with the final bytes. Keep ReadAll's error semantics and keep the
+// partial-chunk path reading up to chunkSize so source growth remains detectable.
+func readUploadChunk(r io.Reader, chunkSize, expectedLen int64) ([]byte, error) {
+	if expectedLen < chunkSize {
+		return io.ReadAll(&io.LimitedReader{R: r, N: chunkSize})
+	}
+	data := make([]byte, chunkSize)
+	read := 0
+	for read < len(data) {
+		n, err := r.Read(data[read:])
+		read += n
+		if err == io.EOF {
+			return data[:read], nil
+		}
+		if err != nil {
+			return nil, err
+		}
+	}
+	return data, nil
 }
 
 func uploadChunked(dbx filesClient, r io.Reader, commitInfo *files.CommitInfo, sizeTotal int64, workers int, chunkSize int64, debug bool) (metadata *files.FileMetadata, err error) {
@@ -147,13 +180,13 @@ func uploadChunked(dbx filesClient, r io.Reader, commitInfo *files.CommitInfo, s
 
 	written := int64(0)
 	for written < sizeTotal {
-		data, err := io.ReadAll(&io.LimitedReader{R: r, N: chunkSize})
-		if err != nil {
-			return nil, err
-		}
 		expectedLen := chunkSize
 		if written+chunkSize > sizeTotal {
 			expectedLen = sizeTotal - written
+		}
+		data, err := readUploadChunk(r, chunkSize, expectedLen)
+		if err != nil {
+			return nil, err
 		}
 		if len(data) != int(expectedLen) {
 			return nil, fmt.Errorf("failed to read %d bytes from source", expectedLen)

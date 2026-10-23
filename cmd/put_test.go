@@ -13,6 +13,7 @@ import (
 
 	"github.com/dropbox/dropbox-sdk-go-unofficial/v6/dropbox"
 	dbxauth "github.com/dropbox/dropbox-sdk-go-unofficial/v6/dropbox/auth"
+	"github.com/dropbox/dropbox-sdk-go-unofficial/v6/dropbox/contenthash"
 	"github.com/dropbox/dropbox-sdk-go-unofficial/v6/dropbox/files"
 	"github.com/spf13/cobra"
 )
@@ -36,10 +37,22 @@ func TestUploadOneChunk_Success(t *testing.T) {
 
 func TestUploadOneChunk_RetryOnServerError(t *testing.T) {
 	stubRetrySleep(t)
+	data := []byte("hello chunk")
+	wantHash, err := contenthash.Compute(bytes.NewReader(data))
+	if err != nil {
+		t.Fatal(err)
+	}
 	calls := 0
 	mock := &mockFilesClient{
 		uploadSessionAppendV2Fn: func(arg *files.UploadSessionAppendArg, content io.Reader) error {
 			calls++
+			if arg.ContentHash != wantHash {
+				t.Fatalf("content hash = %q, want %q on every attempt", arg.ContentHash, wantHash)
+			}
+			payload, err := io.ReadAll(content)
+			if err != nil || !bytes.Equal(payload, data) {
+				t.Fatalf("retry payload = %q, error = %v", payload, err)
+			}
 			if calls < 3 {
 				return dbxauth.ServerError{APIError: dropbox.APIError{ErrorSummary: "500"}}
 			}
@@ -49,14 +62,16 @@ func TestUploadOneChunk_RetryOnServerError(t *testing.T) {
 
 	cursor := files.NewUploadSessionCursor("session123", 0)
 	args := files.NewUploadSessionAppendArg(cursor)
-	data := []byte("hello chunk")
 
-	err := uploadOneChunk(mock, args, data)
+	err = uploadOneChunk(mock, args, data)
 	if err != nil {
 		t.Errorf("expected nil error after retry, got %v", err)
 	}
 	if calls != 3 {
 		t.Errorf("expected 3 calls, got %d", calls)
+	}
+	if args.ContentHash != "" {
+		t.Fatal("upload mutated caller-owned arguments")
 	}
 }
 

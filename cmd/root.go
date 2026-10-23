@@ -239,7 +239,7 @@ func initDbx(cmd *cobra.Command, args []string) (err error) {
 			Refreshable: false,
 			AuthFile:    authFileNone,
 		}
-		config = withRootNamespace(config, tokenType(cmd))
+		config = withRootNamespace(config, tokenType(cmd), cmd.Name())
 		return nil
 	}
 
@@ -255,14 +255,20 @@ func initDbx(cmd *cobra.Command, args []string) (err error) {
 		Refreshable: credential.RefreshToken != "",
 		AuthFile:    authFileKind(),
 	}
-	config = withRootNamespace(config, tokType)
+	config = withRootNamespace(config, tokType, cmd.Name())
 
 	return
 }
 
-func withRootNamespace(cfg dropbox.Config, tokType string) dropbox.Config {
+func withRootNamespace(cfg dropbox.Config, tokType, commandName string) dropbox.Config {
 	// Team manage tokens are for administrative operations and don't need a path root.
 	if tokType == tokenTeamManage {
+		return cfg
+	}
+	// Account and quota queries do not resolve file paths. Keep their actual
+	// requests fresh rather than fetching an unused namespace beforehand.
+	switch commandName {
+	case "account", "du":
 		return cfg
 	}
 

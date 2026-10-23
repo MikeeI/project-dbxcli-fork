@@ -656,7 +656,7 @@ func TestWithRootNamespaceSkipsTeamManage(t *testing.T) {
 		},
 	})
 
-	got := withRootNamespace(cfg, tokenTeamManage)
+	got := withRootNamespace(cfg, tokenTeamManage, "info")
 
 	if got.PathRoot != "" {
 		t.Fatalf("path root = %q, want empty", got.PathRoot)
@@ -692,7 +692,7 @@ func TestWithRootNamespaceKeepsConfigOnAccountError(t *testing.T) {
 		},
 	})
 
-	got := withRootNamespace(cfg, tokenPersonal)
+	got := withRootNamespace(cfg, tokenPersonal, "ls")
 
 	if got.Token != cfg.Token || got.AsMemberID != cfg.AsMemberID || got.Domain != cfg.Domain {
 		t.Fatalf("config = %#v, want original token/as-member/domain", got)

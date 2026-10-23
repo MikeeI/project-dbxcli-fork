@@ -8,7 +8,8 @@ Agenten dürfen begrenzte oder fehlgeschlagene Suchläufe nicht als vollständig
 
 Dieses Dokument enthält den vollständigen Plan und den jeweils belegten Implementierungsstand.
 Die anschließende ausdrückliche Nutzeranweisung autorisiert die vollständige private Umsetzung dieses Scopes auf `personal`.
-Sie autorisiert weder Upstream-Veröffentlichung noch globale Installation oder Live-Kontoabfragen.
+Die Implementierungsfreigabe allein autorisiert weder Upstream-Veröffentlichung noch globale Installation oder Kontozugriffe.
+Die später gesondert freigegebenen lesenden Live-Checks sind im folgenden Nachweis dokumentiert.
 
 Die Entwicklung erfolgt auf `personal`, ohne verpflichtende Upstream-Branches oder Pull-Request-Entwürfe.
 Upstream-Integration ist kein Lieferziel, unabhängig von möglichem Interesse oder möglicher Ablehnung.
@@ -44,11 +45,114 @@ Beobachtete Verifikation am 2026-10-22:
 - Die vorhandenen Handlerprüfungen bestätigen stderr-Diagnose, Einzeldokumentfehler und erhaltene SDK-Exitklassen.
 
 Es wurden keine neuen Testfunktionen, Testdateien, Abhängigkeiten, Packages oder Endpoints eingeführt.
-Es wurden weder Live-Kontoabfragen noch globale Installation, Transfers oder Upstream-Veröffentlichung ausgeführt.
-Die kombinierte Serverfilterwirkung bleibt deshalb ausdrücklich nicht live bestätigt.
+Bis zum Implementierungsabschluss am 2026-10-22 wurden keine Live-Kontoabfragen ausgeführt.
+Die gesondert freigegebenen Live-Checks vom 2026-10-23 ergänzen diesen ursprünglichen Prüfumfang.
+Globale Installation, Transfers und Upstream-Veröffentlichung wurden nicht ausgeführt.
 Die vollständige private Search-Implementierung ist in `547752f` auf `origin/personal` enthalten.
 `ISSUE-003` und `ISSUE-036` bis `ISSUE-039` sind als privater Abschluss mit `Archive-Reason: Other` archiviert.
 Das behauptet keine Upstream-Behebung; offene Listing-, Transfer- und Alt-Completion-Scopes bleiben getrennt erhalten.
+
+## Live-Nachweis am 2026-10-23
+
+Der Nutzer autorisierte eine Kontoidentitätsprüfung und einige lesende CLI-Aufrufe.
+Ausgeführt wurden eine Kontoabfrage, zwei begrenzte Listings und fünf Suchläufe, jeweils mit `--timeout 30s`.
+Alle acht Live-Aufrufe endeten erfolgreich mit `ok: true`.
+Remote-Dateien und Quellcode wurden dabei nicht verändert; Dateiinhalte wurden nicht heruntergeladen.
+
+Verwendet wurde ein temporärer nativer Build aus `48f3420e3074b8d18915e524fcc3bb023950132a`.
+Die gemeldete CLI-Version war `3.7.5-0.20261022142919-48f3420e3074`, mit SDK `v6.6.2` und Spec `6d985df`.
+Die folgenden Aufrufe verwenden den normalisierten Executable-Namen `dbxcli`, keine globale Installation.
+Der temporäre Build wurde nach der Demonstration entfernt; der Repository-Arbeitsbaum blieb sauber.
+
+### Konto und begrenzte Übersicht
+
+```sh
+dbxcli --timeout 30s account --output=json
+dbxcli --timeout 30s ls / --limit 10 --sort name --output=json
+dbxcli --timeout 30s ls /SORT_Scan --limit 6 --output=json
+```
+
+- Die Kontoabfrage bestätigt `Gerold M` mit `dropbox@in9.at`.
+- Die Auth-Metadaten lauten `source: saved`, `refreshable: true` und `auth_file: default`.
+- Das Root-Listing enthält zehn Ordner, darunter `/GitlabWorkspace`, `/Sharing` und `/SORT_Scan`.
+- Das zweite Listing zeigt sechs Einträge aus `/SORT_Scan` als Grundlage der Suchbegriffe.
+- Diese begrenzten Listings sind keine vollständige Konto- oder Ordnerinventur.
+- Die erfolgreiche Kontoabfrage beweist nicht, dass im beobachteten Lauf tatsächlich ein Token erneuert wurde.
+
+### Namenssuche und sichtbares Ergebnislimit
+
+```sh
+dbxcli --timeout 30s search 2018 /SORT_Scan --limit 3 --output=json
+```
+
+Die Ausgabe enthält drei Treffer bei drei empfangenen API-Matches.
+Der Zustand ist `stop_reason: limit`, `server_has_more: true` und `local_filters_applied: false`.
+Der Ausschnitt wird damit nicht als vollständiges API-Ergebnis dargestellt.
+
+### PDF-Serverfilter, Titelspans und lokale Sortierung
+
+```sh
+dbxcli --timeout 30s search 2018 /SORT_Scan \
+  --ext pdf --category pdf --highlights --limit 3 \
+  --sort size --reverse --output=json
+```
+
+Die kombinierte Serverfilteranfrage liefert drei PDFs bei drei empfangenen API-Matches.
+Ihre Größen sind lokal absteigend als `1805491`, `1551495` und `1517175` Byte sortiert.
+Die Titelspans markieren jeweils `2018` durch `is_highlighted: true`.
+Der Zustand bleibt `limit` mit `server_has_more: true`; die Sortierung beweist kein global größtes Top-N-Ergebnis.
+
+### Kombinierte lokale Filter und API-Ende
+
+```sh
+dbxcli --timeout 30s search 2018 /SORT_Scan \
+  --ext jpg --category image --type file \
+  --name-glob '*.jpg' --name-regex '^2018' --exclude-name-contains _002 \
+  --min-size 1 --max-size 1000000 \
+  --modified-from 2018-01-01T00:00:00Z --modified-before 2019-01-01T00:00:00Z \
+  --time client --limit 3 --sort time --reverse --output=json
+```
+
+Vier API-Matches ergeben einen akzeptierten Treffer: `/SORT_Scan/20180201173703_001.jpg`.
+Die Datei ist `637479` Byte groß und besitzt `client_modified: 2018-02-01T16:45:53Z`.
+Ihre Serveränderungszeit lautet dagegen `2025-02-18T03:40:10Z`.
+Der Zustand ist `api_exhausted`, `server_has_more: false` und `local_filters_applied: true`.
+Dieser Lauf belegt Filterkombination und API-Ende, aber keine gezielt herbeigeführte Mehrseiten-Pagination.
+
+### Inhaltssuche ohne Dateidownload
+
+```sh
+dbxcli --timeout 30s search Rechnung /SORT_Scan \
+  --content --ext pdf --category pdf --highlights --limit 3 --output=json
+```
+
+Die Inhaltssuche liefert drei PDFs, obwohl `Rechnung` in keinem ihrer Dateinamen steht.
+Ein Treffer ist `/SORT_Scan/2018-06-20 10.10.37.pdf`.
+Der Zustand ist `limit` mit `server_has_more: true`; Titelspans sind vorhanden, aber nicht hervorgehoben.
+Es werden keine Inhaltssnippets oder Dateibytes ausgegeben.
+Dropbox liefert auch bei der vorherigen Namenssuche `match_type: filename_and_content`.
+Dieser unverändert übernommene Providerwert ist deshalb kein Beweis für die gewählte `--content`-Requestoption.
+
+### Explizite Null-Byte-Grenze
+
+```sh
+dbxcli --timeout 30s search '2018-06-20 10.05.54.pdf' /SORT_Scan \
+  --ext pdf --max-size 0 --limit 3 --output=json
+```
+
+Die zuvor gefundene PDF ist `1805491` Byte groß.
+Ein API-Match wird empfangen, aber kein Ergebnis ausgegeben.
+`input.max_size` bleibt ausdrücklich `0`; der Zustand ist `api_exhausted` mit lokalen Filtern.
+Die Null wird damit nicht als fehlende Obergrenze behandelt.
+
+### Aussagegrenzen des Live-Nachweises
+
+- Bestätigt sind die genannten Querys und Filterkombinationen auf diesem Konto, keine beliebigen Suchräume.
+- Die Inhaltssuche bestätigt keine garantierte OCR-Abdeckung sämtlicher Scans.
+- Deduplizierung unter tatsächlich gelieferten Duplikaten wurde nicht gezielt provoziert.
+- Fortsetzungsfehler und erhaltene Teilergebnisse wurden nicht am Live-Konto herbeigeführt.
+- Eine ausgelöste Token-Erneuerung wurde nicht separat beobachtet.
+- API-Ende bleibt wegen Indexverzug, möglichen Auslassungen und Obergrenze kein Vollständigkeitsbeweis.
 
 ## Grenzen und Nichtziele
 
@@ -73,7 +177,7 @@ Sie ersetzen keine vollständige kontoweite Inventarisierung nach Name, Größe 
 ## Belegter Ausgangsstand
 
 Die folgenden Quellanker dokumentieren den historischen Bestand vor dieser Umsetzung.
-Der aktuelle Prüfnachweis wird getrennt erfasst; Live-Kontoabfragen wurden nicht durchgeführt.
+Die damalige Untersuchung nutzte keine Live-Kontoabfragen; spätere Beobachtungen stehen im Live-Nachweis.
 
 - `go.mod:6` pinnt das benötigte SDK bereits auf `v6.6.2`.
 - `cmd/search.go:79-93` sammelt Metadaten, begrenzt sie und sortiert erst danach lokal.
@@ -392,7 +496,40 @@ Größen- und Zeitfilter gelten nur für Dateien.
 Ordner werden nicht als null Byte oder mit einem erfundenen Änderungsdatum behandelt.
 Lehne `--type folder` zusammen mit Größen- oder Zeitfiltern als widersprüchlich ab.
 Fehlende notwendige Dateidaten werden nicht durch erfundene Werte ersetzt.
-`client_modified` beschreibt den gelieferten Client-Zeitwert, keinen verlässlichen Synchronisationsnachweis.
+
+### Datei-, Server- und Aufnahmezeit
+
+`client_modified` ist der vom Client beziehungsweise Uploader gesetzte Dateiänderungszeitpunkt.
+Dropbox übernimmt diesen Wert ungeprüft; ein API-Uploader kann ihn ausdrücklich angeben.
+Er ist weder ein verlässlicher Erstellungszeitpunkt noch ein Synchronisationsnachweis.
+Für Änderungs- und Konflikterkennung dient stattdessen die Revision `rev`.
+Quellen: https://docs.dropboxapi.com/dropbox-api/api-reference/user-endpoints/files/get-metadata und https://docs.dropboxapi.com/dropbox-api/api-reference/user-endpoints/files/upload
+
+`server_modified` beschreibt die letzte Änderung der Datei auf Dropbox.
+Der Wert ist nicht automatisch das Datum des ersten Uploads und kein Fotoaufnahme- oder Dokumenterstellungsdatum.
+Quelle: https://docs.dropboxapi.com/dropbox-api/api-reference/user-endpoints/files/get-metadata
+
+Eine mögliche Foto-/Videoaufnahmezeit ist das eigene optionale Feld `media_info.metadata.time_taken`.
+Dropbox extrahiert es aus eingebetteten Medieninformationen, beispielsweise EXIF `DateTimeOriginal`.
+Es ist kein universeller Dateisystem-Erstellungszeitpunkt und kann fehlen oder noch nicht verfügbar sein.
+Quellen: https://docs.dropboxapi.com/dropbox-api/api-reference/user-endpoints/files/get-metadata und https://community.dropbox.com/en/discussion/253446/fully-understanding-filesphotometadata
+
+Der öffentliche Metadatenweg verwendet `get_metadata` mit `include_media_info: true`.
+`list_folder` und seine Fortsetzung liefern das Medienfeld seit dem 2019-12-02 nicht mehr.
+Das alte SDK-Listenflag `IncludeMediaInfo` ist entsprechend wirkungslos und keine Lösung für Aufnahmezeitfilter.
+Quelle: https://docs.dropboxapi.com/dropbox-api/api-reference/user-endpoints/files/get-metadata
+SDK-Belege: `files/types.go:122-124,1376-1379,1896-1899,2521-2528` in der gepinnten Version.
+
+Die aktuelle CLI gibt in `cmd/json_metadata.go` nur Client- und Serveränderungszeit aus.
+`cmd/format.go:getTime` und die lokalen Filter wählen ausschließlich zwischen `--time server` und `--time client`.
+Es gibt keinen `--time taken`-Modus und keinen Filter nach Medienaufnahmezeit.
+Diese Untersuchung erweitert weder die CLI noch den vereinbarten Suchscope um zusätzliche Metadatenabfragen.
+
+Ein konkret beobachtetes Gegenbeispiel ist `/SORT_Scan/20180119172250_001.jpg`.
+Das datumsähnliche Namenspräfix lautet `20180119172250`, aber `client_modified` ist `2018-02-05T10:32:20Z`.
+`server_modified` derselben Datei ist `2025-02-18T03:39:47Z`.
+Die Werte belegen unterschiedliche Zeitangaben, aber weder einen konkreten Importvorgang noch eine echte Aufnahmezeit.
+Die eingebetteten Medien-/EXIF-Daten dieser Datei wurden nicht abgerufen.
 
 ### Kombination, Limit und Aufwand
 
@@ -512,7 +649,7 @@ Veröffentliche Schemas und Verbraucherhinweise zusammen mit der betreffenden Fo
 - Ohne Total-Count oder Cap-Signal bleibt die Ursache eines API-Endes an der Obergrenze teilweise unbekannt.
 - Lokale Filter benötigen möglicherweise viele Seiten; es gibt keine Zusage gleicher Latenz bei gleichem Ergebnislimit.
 - Doppelte IDs können unterschiedliche Metadaten enthalten; die erste passende Darstellung ist keine Snapshot-Garantie.
-- Die konkrete Serverwirkung kombinierter Kategorien und Erweiterungen wurde nicht am Live-Konto verifiziert.
+- Die Serverwirkung außerhalb der im Live-Nachweis erfassten Querys und Filterkombinationen bleibt ungeprüft.
 - Neue Array-Flags und fehlende Filterwerte benötigen korrekte Discovery-Schemas, nicht nur korrekte Cobra-Parser.
 - Ausgabe- und Schemaänderungen müssen gemeinsam geprüft werden, nicht erst in einer abschließenden Aufräumphase.
 - Die Reverse-Korrektur beeinflusst auch Listings; ihre begrenzte Regression muss separat nachgewiesen werden.

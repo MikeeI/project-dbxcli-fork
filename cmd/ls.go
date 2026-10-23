@@ -29,6 +29,7 @@ import (
 
 const deletedItemFormatString = "<<%s>>"
 const maxListFolderLimit = uint64(^uint32(0))
+const deletedEntryRevisionLimit = 1
 
 type lsInput struct {
 	Path           string `json:"path"`
@@ -242,6 +243,7 @@ func prepareLsEntries(dbx filesClient, entries []files.IsMetadata, onlyDeleted b
 		deletedItem, isDeleted := entry.(*files.DeletedMetadata)
 		if isDeleted {
 			revisionArg := files.NewListRevisionsArg(deletedItem.PathLower)
+			revisionArg.Limit = deletedEntryRevisionLimit
 			res, err := dbx.ListRevisionsContext(currentContext(), revisionArg)
 			if err != nil {
 				if isListRevisionsNotFileError(err) {

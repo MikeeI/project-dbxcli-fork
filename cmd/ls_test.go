@@ -618,6 +618,9 @@ func TestLsJSONDeletedEntryIsStructured(t *testing.T) {
 			if arg.Path != "/removed.txt" {
 				t.Fatalf("ListRevisions path = %q, want /removed.txt", arg.Path)
 			}
+			if arg.Limit != 1 {
+				t.Fatalf("ListRevisions limit = %d, want only the displayed revision", arg.Limit)
+			}
 			return files.NewListRevisionsResult(false, []*files.FileMetadata{
 				{
 					Metadata: files.Metadata{
